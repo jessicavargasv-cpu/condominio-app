@@ -722,6 +722,7 @@ export default function App() {
   const [todasCats, setTodasCats] = useState(TODAS_CATEGORIAS);
   const [cargandoApp, setCargandoApp] = useState(true);
   const [adminToken, setAdminToken] = useState(null);
+  const [vista, setVista] = useState("publica");
 
   // Detectar ruta actual
   const path = window.location.pathname.replace(/^\//, "").replace(/\/$/, "");
@@ -783,7 +784,6 @@ export default function App() {
   }
 
   // ── Ruta /:slug-condominio ────────────────────────────────────
-  const [vista, setVista] = useState("publica");
   const cond = condominios.find(c => c.slug === path);
 
   if (!cond) {
