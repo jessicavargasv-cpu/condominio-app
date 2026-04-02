@@ -763,11 +763,16 @@ export default function App() {
 
   // ── Ruta /admin ───────────────────────────────────────────────
   if (esAdmin) {
-    const cond = condominios[0];
-    const css = buildCSS(cond?.colores || PALETAS[0]);
+    const adminCSS = buildCSS({
+      accent: "#3D4F6B",
+      accentLight: "#D9DEE8",
+      bg: "#F2F3F5",
+      surface: "#FAFAFA",
+      border: "#DDE0E6"
+    });
     return (
       <>
-        <style>{css}</style>
+        <style>{adminCSS}</style>
         {!adminToken
           ? <LoginAdmin onLogin={setAdminToken} />
           : <PanelAdmin
