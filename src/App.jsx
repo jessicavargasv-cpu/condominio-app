@@ -342,6 +342,12 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
               border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600,
               cursor: (!valido || enviando) ? "not-allowed" : "pointer", fontFamily: "inherit", transition: "all 0.2s"
             }}>{enviando ? "⟳ Enviando..." : "Enviar propuesta"}</button>
+            <p style={{
+              fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6,
+              borderTop: "1px solid var(--border)", paddingTop: 12, marginTop: 4
+            }}>
+              🔒 Los datos ingresados serán publicados en el directorio del condominio una vez validados. Si eres el proveedor y deseas eliminar tu información, contacta al administrador en <strong>admin.appx@gmail.com</strong>
+            </p>
           </div>
         </div>
       </div>
