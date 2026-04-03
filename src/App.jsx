@@ -270,7 +270,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
     const limpio = val.replace(/[^\d\s]/g, "");
     set("telefono", limpio);
     if (limpio && !validarTelefono(limpio.replace(/\s/g, ""))) {
-      setTelefonoError("Ingresa 9 dígitos comenzando con 9. Ej: 9 7568 1492");
+      setTelefonoError("Ingresa 9 dígitos comenzando con 9. Ej: 9 1234 5678");
     } else {
       setTelefonoError("");
     }
