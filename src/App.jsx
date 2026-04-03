@@ -646,7 +646,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           {p.descripcion && <p style={{ fontSize: 13, marginTop: 4, textAlign: "left" }}>{p.descripcion}</p>}
           {!p.recomienda && p.motivo_no_recomendacion && (
             <div style={{ marginTop: 8, padding: "8px 12px", background: "#FDECEA", borderRadius: 8, borderLeft: "3px solid #C0392B" }}>
-              <p style={{ fontSize: 12, color: "#C0392B", fontWeight: 600, marginBottom: 2 }}>Motivo de no recomendación:</p>
+              <p style={{ fontSize: 12, color: "#C0392B", fontWeight: 600, marginBottom: 2, textAlign: "left" }}>Motivo de no recomendación:</p>
               <p style={{ fontSize: 13, color: "#8B2418", textAlign: "left" }}>{p.motivo_no_recomendacion}</p>
             </div>
           )}
