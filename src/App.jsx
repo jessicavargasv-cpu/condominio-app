@@ -509,6 +509,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const [condominioActivo, setCondominioActivo] = useState(condominios[0]?.slug || "");
   const [tab, setTab] = useState("proveedores");
   const [filtroAprobados, setFiltroAprobados] = useState("todos");
+  const [busquedaAdmin, setBusquedaAdmin] = useState("");
   const [proveedores, setProveedores] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState(null);
@@ -642,15 +643,15 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
               color: copiado ? "var(--accent)" : "var(--text-muted)", transition: "all 0.2s"
             }}>{copiado ? "✓" : "📋"}</button>
           </div>
-          {p.descripcion && <p style={{ fontSize: 13, marginTop: 4 }}>{p.descripcion}</p>}
+          {p.descripcion && <p style={{ fontSize: 13, marginTop: 4, textAlign: "left" }}>{p.descripcion}</p>}
           {!p.recomienda && p.motivo_no_recomendacion && (
             <div style={{ marginTop: 8, padding: "8px 12px", background: "#FDECEA", borderRadius: 8, borderLeft: "3px solid #C0392B" }}>
               <p style={{ fontSize: 12, color: "#C0392B", fontWeight: 600, marginBottom: 2 }}>Motivo de no recomendación:</p>
-              <p style={{ fontSize: 13, color: "#8B2418" }}>{p.motivo_no_recomendacion}</p>
+              <p style={{ fontSize: 13, color: "#8B2418", textAlign: "left" }}>{p.motivo_no_recomendacion}</p>
             </div>
           )}
-          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
-            📅 {formatearFecha(p.creado_at)}
+          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6, textAlign: "left" }}>
+            📅 <strong>Fecha registro:</strong> {formatearFecha(p.creado_at)}
           </p>
         </div>
         <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
@@ -797,11 +798,26 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           {tab === "proveedores" && (
             cargando ? <Cargando mensaje="Cargando proveedores..." /> :
             <div>
-              {pendientes.length > 0 && (
+              {/* Buscador */}
+              <input
+                placeholder="Buscar por nombre o descripción..."
+                value={busquedaAdmin}
+                onChange={e => setBusquedaAdmin(e.target.value)}
+                style={{ ...inputStyle, marginBottom: 20 }}
+              />
+              {pendientes.filter(p =>
+                p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) ||
+                p.descripcion?.toLowerCase().includes(busquedaAdmin.toLowerCase())
+              ).length > 0 && (
                 <div style={{ marginBottom: 28 }}>
                   <h3 className="serif" style={{ fontSize: 18, marginBottom: 12 }}>⏳ Pendientes <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}>({pendientes.length})</span></h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {pendientes.map(p => <FilaProveedor key={p.id} p={p} esPendiente />)}
+                    {pendientes
+                      .filter(p =>
+                        p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) ||
+                        p.descripcion?.toLowerCase().includes(busquedaAdmin.toLowerCase())
+                      )
+                      .map(p => <FilaProveedor key={p.id} p={p} esPendiente />)}
                   </div>
                 </div>
               )}
@@ -828,8 +844,10 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                   ? <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Sin proveedores aprobados aún.</p>
                   : (() => {
                       const filtrados = aprobados.filter(p =>
-                        filtroAprobados === "todos" ? true :
-                        filtroAprobados === "recomendados" ? p.recomienda : !p.recomienda
+                        (filtroAprobados === "todos" ? true :
+                        filtroAprobados === "recomendados" ? p.recomienda : !p.recomienda) &&
+                        (p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) ||
+                        p.descripcion?.toLowerCase().includes(busquedaAdmin.toLowerCase()))
                       );
                       return filtrados.length === 0
                         ? <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No hay proveedores en esta categoría.</p>
