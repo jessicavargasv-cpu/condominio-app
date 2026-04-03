@@ -252,13 +252,29 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
 };
 
 // ── Formulario Propuesta ──────────────────────────────────────────
+const validarTelefono = (num) => /^9\d{8}$/.test(num.replace(/\s/g, ""));
+
 const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
-  const [form, setForm] = useState({ nombre: "", categoria: "", telefono: "", descripcion: "", recomienda: true });
+  const [form, setForm] = useState({ nombre: "", categoria: "", telefono: "", descripcion: "", recomienda: true, motivo: "" });
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [telefonoError, setTelefonoError] = useState("");
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const cats = todasCats.filter(c => condominio.categorias_activas.includes(c.id));
-  const valido = form.nombre && form.categoria && form.telefono;
+  const telefonoLimpio = form.telefono.replace(/\s/g, "");
+  const telefonoValido = validarTelefono(telefonoLimpio);
+  const valido = form.nombre && form.categoria && form.telefono && telefonoValido;
+
+  const handleTelefono = (val) => {
+    // Solo permite números y espacios
+    const limpio = val.replace(/[^\d\s]/g, "");
+    set("telefono", limpio);
+    if (limpio && !validarTelefono(limpio.replace(/\s/g, ""))) {
+      setTelefonoError("Ingresa 9 dígitos comenzando con 9. Ej: 9 7568 1492");
+    } else {
+      setTelefonoError("");
+    }
+  };
 
   const handleEnviar = async () => {
     if (!valido) return;
@@ -267,8 +283,11 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
       insert: {
         condominio: condominio.slug,
         nombre: form.nombre, categoria: form.categoria,
-        telefono: form.telefono, descripcion: form.descripcion,
-        recomienda: form.recomienda, estado: "pendiente"
+        telefono: `+56 ${form.telefono}`,
+        descripcion: form.descripcion,
+        recomienda: form.recomienda,
+        motivo_no_recomendacion: !form.recomienda ? form.motivo : null,
+        estado: "pendiente"
       }
     });
     setEnviando(false);
@@ -314,7 +333,23 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
             </div>
             <div>
               <label style={labelStyle}>Teléfono / WhatsApp *</label>
-              <input style={inputStyle} value={form.telefono} onChange={e => set("telefono", e.target.value)} placeholder="+56 9 XXXX XXXX" />
+              <div style={{ display: "flex", gap: 0 }}>
+                <span style={{
+                  display: "flex", alignItems: "center", padding: "10px 12px",
+                  background: "var(--accent-light)", color: "var(--accent)",
+                  border: "1.5px solid var(--accent)", borderRight: "none",
+                  borderRadius: "10px 0 0 10px", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap"
+                }}>+56</span>
+                <input
+                  style={{ ...inputStyle, borderRadius: "0 10px 10px 0", borderLeft: "none" }}
+                  value={form.telefono}
+                  onChange={e => handleTelefono(e.target.value)}
+                  placeholder="9 7568 1492"
+                  maxLength={11}
+                />
+              </div>
+              {telefonoError && <p style={{ fontSize: 12, color: "var(--warn)", marginTop: 6 }}>⚠ {telefonoError}</p>}
+              {form.telefono && telefonoValido && <p style={{ fontSize: 12, color: "var(--accent)", marginTop: 6 }}>✓ Número válido: +56 {form.telefono}</p>}
             </div>
             <div>
               <label style={labelStyle}>Descripción breve</label>
@@ -336,6 +371,14 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
                 ))}
               </div>
             </div>
+            {!form.recomienda && (
+              <div className="fade-up">
+                <label style={labelStyle}>¿Por qué no lo recomiendas? *</label>
+                <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80, borderColor: "var(--warn)" }}
+                  value={form.motivo} onChange={e => set("motivo", e.target.value)}
+                  placeholder="Cuéntanos qué pasó para que los vecinos estén informados..." />
+              </div>
+            )}
             <button onClick={handleEnviar} disabled={!valido || enviando} style={{
               marginTop: 4, background: (!valido || enviando) ? "var(--border)" : "var(--accent)",
               color: (!valido || enviando) ? "var(--text-muted)" : "#fff",
@@ -417,6 +460,7 @@ const LoginAdmin = ({ onLogin }) => {
 const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondominio, adminToken, onLogout }) => {
   const [condominioActivo, setCondominioActivo] = useState(condominios[0]?.slug || "");
   const [tab, setTab] = useState("proveedores");
+  const [filtroAprobados, setFiltroAprobados] = useState("todos");
   const [proveedores, setProveedores] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState(null);
@@ -644,12 +688,38 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                 </div>
               )}
               <div>
-                <h3 className="serif" style={{ fontSize: 18, marginBottom: 12 }}>✅ Aprobados <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}>({aprobados.length})</span></h3>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
+                  <h3 className="serif" style={{ fontSize: 18 }}>✅ Aprobados <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}>({aprobados.length})</span></h3>
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {[
+                      { id: "todos", label: "Todos" },
+                      { id: "recomendados", label: "👍 Recomendados" },
+                      { id: "no_recomendados", label: "👎 No recomendados" },
+                    ].map(f => (
+                      <button key={f.id} onClick={() => setFiltroAprobados(f.id)} style={{
+                        background: filtroAprobados === f.id ? "var(--accent)" : "var(--surface)",
+                        color: filtroAprobados === f.id ? "#fff" : "var(--text-muted)",
+                        border: `1.5px solid ${filtroAprobados === f.id ? "var(--accent)" : "var(--border)"}`,
+                        borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 600,
+                        cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s"
+                      }}>{f.label}</button>
+                    ))}
+                  </div>
+                </div>
                 {aprobados.length === 0
                   ? <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Sin proveedores aprobados aún.</p>
-                  : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {aprobados.map(p => <FilaProveedor key={p.id} p={p} esPendiente={false} />)}
-                  </div>
+                  : (() => {
+                    const filtrados = aprobados.filter(p =>
+                      filtroAprobados === "todos" ? true :
+                      filtroAprobados === "recomendados" ? p.recomienda :
+                      !p.recomienda
+                    );
+                    return filtrados.length === 0
+                      ? <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No hay proveedores en esta categoría.</p>
+                      : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                          {filtrados.map(p => <FilaProveedor key={p.id} p={p} esPendiente={false} />)}
+                        </div>;
+                  })()
                 }
               </div>
             </div>
