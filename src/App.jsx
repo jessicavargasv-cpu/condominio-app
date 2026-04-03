@@ -344,7 +344,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
                   style={{ ...inputStyle, borderRadius: "0 10px 10px 0", borderLeft: "none" }}
                   value={form.telefono}
                   onChange={e => handleTelefono(e.target.value)}
-                  placeholder="9 7568 1492"
+                  placeholder="9 1234 5678"
                   maxLength={11}
                 />
               </div>
