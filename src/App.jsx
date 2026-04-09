@@ -1,4 +1,16 @@
 import { useState, useEffect } from "react";
+import posthog from "posthog-js";
+import * as Sentry from "@sentry/react";
+
+posthog.init("TU_TOKEN_POSTHOG", {
+  api_host: "phc_oKA6fJf3UpZsk8o69sXbHEAD8aFpEPRJEF2yKKecnQrk",
+  capture_pageview: true,
+});
+
+Sentry.init({
+  dsn: "https://8c5ef00a076acfabffcf7d9e1d044664@o4511191006969856.ingest.us.sentry.io/4511191083188224",
+  sendDefaultPii: false,
+});
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
 const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
