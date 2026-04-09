@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import posthog from "posthog-js";
 import * as Sentry from "@sentry/react";
 
+// ── Analytics & Monitoring ────────────────────────────────────────
 posthog.init("TU_TOKEN_POSTHOG", {
   api_host: "phc_oKA6fJf3UpZsk8o69sXbHEAD8aFpEPRJEF2yKKecnQrk",
   capture_pageview: true,
@@ -83,19 +84,6 @@ const PALETAS = [
 
 const EMOJIS_SUGERIDOS = ["🏠","🚗","🐾","🧹","🪛","🎨","🔑","📦","🛁","🪴","🏊","🧺","🖥️","📡","🔒","🚿","🧯","🪞","🛗","🏋️"];
 
-// ── Utilidades ────────────────────────────────────────────────────
-const validarTelefono = (num) => /^9\d{8}$/.test(num.replace(/\s/g, ""));
-
-const formatearFecha = (iso) => {
-  if (!iso) return "";
-  const d = new Date(iso);
-  return d.toLocaleDateString("es-CL", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
-};
-
-const copiarAlPortapapeles = (texto) => {
-  navigator.clipboard.writeText(texto).catch(() => {});
-};
-
 // ── Estilos globales ──────────────────────────────────────────────
 const buildCSS = (c) => `
   @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -162,77 +150,32 @@ const Badge = ({ categoriaId, todasCats }) => {
 };
 
 // ── Tarjeta proveedor ─────────────────────────────────────────────
-const ProveedorCard = ({ p, todasCats }) => {
-  const [copiado, setCopiado] = useState(false);
-
-  const handleCopiar = () => {
-    copiarAlPortapapeles(p.telefono);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
-  };
-
-  return (
-    <div className="fade-up" style={{
-      background: "var(--surface)", border: `1px solid ${p.recomienda ? "var(--border)" : "#F5C6C2"}`,
-      borderRadius: "var(--radius)", padding: "20px 22px",
-      boxShadow: "var(--shadow)", display: "flex", flexDirection: "column", gap: 10,
-      transition: "transform 0.2s, box-shadow 0.2s",
-    }}
-      onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(28,26,22,0.12)"; }}
-      onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--shadow)"; }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-        <div>
-          <p style={{ fontWeight: 600, fontSize: 16 }}>{p.nombre}</p>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-            <p style={{ color: "var(--text-muted)", fontSize: 13 }}>📞 {p.telefono}</p>
-            <button onClick={handleCopiar} title="Copiar teléfono" style={{
-              background: copiado ? "var(--accent-light)" : "transparent",
-              border: "none", cursor: "pointer", fontSize: 13, padding: "2px 6px",
-              borderRadius: 6, color: copiado ? "var(--accent)" : "var(--text-muted)",
-              transition: "all 0.2s"
-            }}>{copiado ? "✓" : "📋"}</button>
-          </div>
-        </div>
-        <Badge categoriaId={p.categoria} todasCats={todasCats} />
+const ProveedorCard = ({ p, todasCats }) => (
+  <div className="fade-up" style={{
+    background: "var(--surface)", border: "1px solid var(--border)",
+    borderRadius: "var(--radius)", padding: "20px 22px",
+    boxShadow: "var(--shadow)", display: "flex", flexDirection: "column", gap: 10,
+    transition: "transform 0.2s, box-shadow 0.2s",
+  }}
+    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(28,26,22,0.12)"; }}
+    onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--shadow)"; }}
+  >
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+      <div>
+        <p style={{ fontWeight: 600, fontSize: 16 }}>{p.nombre}</p>
+        <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 2 }}>📞 {p.telefono}</p>
       </div>
-      {p.descripcion && <p style={{ fontSize: 14, color: "#4A4540", lineHeight: 1.6 }}>{p.descripcion}</p>}
-      <span style={{
-        alignSelf: "flex-start", fontSize: 12, fontWeight: 700,
-        color: p.recomienda ? "var(--accent)" : "#C0392B",
-        background: p.recomienda ? "var(--accent-light)" : "#FDECEA",
-        padding: "4px 12px", borderRadius: 999,
-        border: p.recomienda ? "none" : "1.5px solid #F5C6C2"
-      }}>
-        {p.recomienda ? "👍 Recomendado" : "👎 No recomendado"}
-      </span>
+      <Badge categoriaId={p.categoria} todasCats={todasCats} />
     </div>
-  );
-};
-
-// ── Campo teléfono reutilizable ───────────────────────────────────
-const CampoTelefono = ({ value, onChange, error }) => (
-  <div>
-    <label style={labelStyle}>Teléfono / WhatsApp *</label>
-    <div style={{ display: "flex", gap: 0 }}>
-      <span style={{
-        display: "flex", alignItems: "center", padding: "10px 12px",
-        background: "var(--accent-light)", color: "var(--accent)",
-        border: "1.5px solid var(--accent)", borderRight: "none",
-        borderRadius: "10px 0 0 10px", fontSize: 14, fontWeight: 600, whiteSpace: "nowrap"
-      }}>+56</span>
-      <input
-        style={{ ...inputStyle, borderRadius: "0 10px 10px 0", borderLeft: "none" }}
-        value={value}
-        onChange={onChange}
-        placeholder="9 1234 5678"
-        maxLength={11}
-      />
-    </div>
-    {error && <p style={{ fontSize: 12, color: "var(--warn)", marginTop: 6 }}>⚠ {error}</p>}
-    {value && validarTelefono(value.replace(/\s/g, "")) && !error &&
-      <p style={{ fontSize: 12, color: "var(--accent)", marginTop: 6 }}>✓ Número válido: +56 {value}</p>
-    }
+    {p.descripcion && <p style={{ fontSize: 14, color: "#4A4540", lineHeight: 1.6 }}>{p.descripcion}</p>}
+    <span style={{
+      alignSelf: "flex-start", fontSize: 12, fontWeight: 600,
+      color: p.recomienda ? "var(--accent)" : "var(--warn)",
+      background: p.recomienda ? "var(--accent-light)" : "var(--warn-light)",
+      padding: "3px 10px", borderRadius: 999
+    }}>
+      {p.recomienda ? "👍 Recomendado" : "👎 No recomendado"}
+    </span>
   </div>
 );
 
@@ -244,7 +187,6 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    document.title = `Directorio Servicios · ${condominio.nombre}`;
     const cargar = async () => {
       setCargando(true);
       const data = await query("proveedores", {
@@ -288,7 +230,13 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
             style={{ ...inputStyle, marginTop: 18, background: "var(--bg)" }} />
           <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
             {[{ id: "todos", label: "Todos", emoji: "🏠" }, ...cats].map(cat => (
-              <button key={cat.id} onClick={() => setFiltro(cat.id)} style={{
+              <button key={cat.id} onClick={() => {
+                setFiltro(cat.id);
+                posthog.capture("categoria_filtrada", {
+                  condominio: condominio.slug,
+                  categoria: cat.id,
+                });
+              }} style={{
                 background: filtro === cat.id ? "var(--accent)" : "var(--surface)",
                 color: filtro === cat.id ? "#fff" : "var(--text-muted)",
                 border: `1.5px solid ${filtro === cat.id ? "var(--accent)" : "var(--border)"}`,
@@ -302,13 +250,8 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "24px 24px 48px" }}>
         {cargando ? <Cargando mensaje="Cargando proveedores..." /> : filtrados.length === 0 ? (
           <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-muted)" }}>
-            <p style={{ fontSize: 40 }}>🏠</p>
-            <p style={{ marginTop: 12, fontSize: 16, fontWeight: 600, color: "var(--text)" }}>
-              {busqueda || filtro !== "todos" ? "No hay proveedores que coincidan con tu búsqueda." : `Aún no hay proveedores en ${condominio.nombre}.`}
-            </p>
-            <p style={{ marginTop: 8, fontSize: 14 }}>
-              {!busqueda && filtro === "todos" && "¡Sé el primero en proponer uno!"}
-            </p>
+            <p style={{ fontSize: 40 }}>🔍</p>
+            <p style={{ marginTop: 12, fontSize: 15 }}>No hay proveedores en esta categoría aún.</p>
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
@@ -319,7 +262,7 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
             ))}
           </div>
         )}
-        {!cargando && filtrados.length > 0 && <p style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 12, marginTop: 32 }}>
+        {!cargando && <p style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 12, marginTop: 32 }}>
           {filtrados.length} proveedor{filtrados.length !== 1 ? "es" : ""} verificado{filtrados.length !== 1 ? "s" : ""}
         </p>}
       </div>
@@ -329,28 +272,12 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
 
 // ── Formulario Propuesta ──────────────────────────────────────────
 const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
-  const [form, setForm] = useState({ nombre: "", categoria: "", telefono: "", descripcion: "", recomienda: true, motivo: "" });
+  const [form, setForm] = useState({ nombre: "", categoria: "", telefono: "", descripcion: "", recomienda: true });
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
-  const [telefonoError, setTelefonoError] = useState("");
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const cats = todasCats.filter(c => condominio.categorias_activas.includes(c.id));
-  const telefonoValido = validarTelefono(form.telefono.replace(/\s/g, ""));
-  const valido = form.nombre && form.categoria && form.telefono && telefonoValido;
-
-  useEffect(() => {
-    document.title = `Proponer proveedor · ${condominio.nombre}`;
-  }, []);
-
-  const handleTelefono = (val) => {
-    const limpio = val.replace(/[^\d\s]/g, "");
-    set("telefono", limpio);
-    if (limpio && !validarTelefono(limpio.replace(/\s/g, ""))) {
-      setTelefonoError("Ingresa 9 dígitos comenzando con 9. Ej: 9 1234 5678");
-    } else {
-      setTelefonoError("");
-    }
-  };
+  const valido = form.nombre && form.categoria && form.telefono;
 
   const handleEnviar = async () => {
     if (!valido) return;
@@ -359,12 +286,14 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
       insert: {
         condominio: condominio.slug,
         nombre: form.nombre, categoria: form.categoria,
-        telefono: `+56 ${form.telefono}`,
-        descripcion: form.descripcion,
-        recomienda: form.recomienda,
-        motivo_no_recomendacion: !form.recomienda ? form.motivo : null,
-        estado: "pendiente"
+        telefono: form.telefono, descripcion: form.descripcion,
+        recomienda: form.recomienda, estado: "pendiente"
       }
+    });
+    posthog.capture("proveedor_propuesto", {
+      condominio: condominio.slug,
+      categoria: form.categoria,
+      recomienda: form.recomienda,
     });
     setEnviando(false);
     setEnviado(true);
@@ -407,7 +336,10 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
                 {cats.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
               </select>
             </div>
-            <CampoTelefono value={form.telefono} onChange={e => handleTelefono(e.target.value)} error={telefonoError} />
+            <div>
+              <label style={labelStyle}>Teléfono / WhatsApp *</label>
+              <input style={inputStyle} value={form.telefono} onChange={e => set("telefono", e.target.value)} placeholder="+56 9 XXXX XXXX" />
+            </div>
             <div>
               <label style={labelStyle}>Descripción breve</label>
               <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
@@ -428,14 +360,6 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
                 ))}
               </div>
             </div>
-            {!form.recomienda && (
-              <div className="fade-up">
-                <label style={labelStyle}>¿Por qué no lo recomiendas?</label>
-                <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80, borderColor: "var(--warn)" }}
-                  value={form.motivo} onChange={e => set("motivo", e.target.value)}
-                  placeholder="Cuéntanos qué pasó para que los vecinos estén informados..." />
-              </div>
-            )}
             <button onClick={handleEnviar} disabled={!valido || enviando} style={{
               marginTop: 4, background: (!valido || enviando) ? "var(--border)" : "var(--accent)",
               color: (!valido || enviando) ? "var(--text-muted)" : "#fff",
@@ -462,15 +386,12 @@ const LoginAdmin = ({ onLogin }) => {
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
 
-  useEffect(() => { document.title = "Panel Administración · Condominios"; }, []);
-
   const handleLogin = async () => {
     if (!email || !password) { setError("Completa todos los campos."); return; }
     setCargando(true);
     setError("");
     const data = await authLogin(email, password);
     if (data.access_token) {
-      sessionStorage.setItem("adminToken", data.access_token);
       onLogin(data.access_token);
     } else {
       setError("Email o contraseña incorrectos.");
@@ -520,8 +441,6 @@ const LoginAdmin = ({ onLogin }) => {
 const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondominio, adminToken, onLogout }) => {
   const [condominioActivo, setCondominioActivo] = useState(condominios[0]?.slug || "");
   const [tab, setTab] = useState("proveedores");
-  const [filtroAprobados, setFiltroAprobados] = useState("todos");
-  const [busquedaAdmin, setBusquedaAdmin] = useState("");
   const [proveedores, setProveedores] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState(null);
@@ -546,14 +465,6 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
     };
     if (condominioActivo) cargar();
   }, [condominioActivo]);
-
-  // Actualizar título con contador de pendientes
-  useEffect(() => {
-    const pendientesCount = proveedores.filter(p => p.estado === "pendiente").length;
-    document.title = pendientesCount > 0
-      ? `(${pendientesCount}) Panel Administración · Condominios`
-      : "Panel Administración · Condominios";
-  }, [proveedores]);
 
   const handleAprobar = async (id) => {
     await query("proveedores", { update: { where: `id=eq.${id}`, data: { estado: "aprobado" } } });
@@ -622,96 +533,48 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
     }}>{label}</button>
   );
 
-  const FilaProveedor = ({ p, esPendiente }) => {
-    const [copiado, setCopiado] = useState(false);
-    const handleCopiar = () => {
-      copiarAlPortapapeles(p.telefono);
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2000);
-    };
-    return (
-      <div style={{
-        background: "var(--surface)", border: `1px solid ${!p.recomienda ? "#F5C6C2" : "var(--border)"}`,
-        borderRadius: "var(--radius)", padding: "16px 20px",
-        display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap"
-      }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
-            <span style={{ fontWeight: 600 }}>{p.nombre}</span>
-            <Badge categoriaId={p.categoria} todasCats={todasCats} />
-            <span style={{
-              fontSize: 12, fontWeight: 700,
-              color: p.recomienda ? "var(--accent)" : "#C0392B",
-              background: p.recomienda ? "var(--accent-light)" : "#FDECEA",
-              padding: "2px 8px", borderRadius: 999,
-              border: p.recomienda ? "none" : "1.5px solid #F5C6C2"
-            }}>{p.recomienda ? "👍 Recomendado" : "👎 No recomendado"}</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <p style={{ fontSize: 13, color: "var(--text-muted)" }}>📞 {p.telefono}</p>
-            <button onClick={handleCopiar} title="Copiar teléfono" style={{
-              background: copiado ? "var(--accent-light)" : "transparent", border: "none",
-              cursor: "pointer", fontSize: 12, padding: "2px 6px", borderRadius: 6,
-              color: copiado ? "var(--accent)" : "var(--text-muted)", transition: "all 0.2s"
-            }}>{copiado ? "✓" : "📋"}</button>
-          </div>
-          {p.descripcion && <p style={{ fontSize: 13, marginTop: 4, textAlign: "left" }}>{p.descripcion}</p>}
-          {!p.recomienda && p.motivo_no_recomendacion && (
-            <div style={{ marginTop: 8, padding: "8px 12px", background: "#FDECEA", borderRadius: 8, borderLeft: "3px solid #C0392B" }}>
-              <p style={{ fontSize: 12, color: "#C0392B", fontWeight: 600, marginBottom: 2, textAlign: "left" }}>Motivo de no recomendación:</p>
-              <p style={{ fontSize: 13, color: "#8B2418", textAlign: "left" }}>{p.motivo_no_recomendacion}</p>
-            </div>
-          )}
-          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6, textAlign: "left" }}>
-            📅 <strong>Fecha registro:</strong> {formatearFecha(p.creado_at)}
-          </p>
+  const FilaProveedor = ({ p, esPendiente }) => (
+    <div style={{
+      background: "var(--surface)", border: "1px solid var(--border)",
+      borderRadius: "var(--radius)", padding: "16px 20px",
+      display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap"
+    }}>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+          <span style={{ fontWeight: 600 }}>{p.nombre}</span>
+          <Badge categoriaId={p.categoria} todasCats={todasCats} />
+          <span style={{ fontSize: 12, color: p.recomienda ? "var(--accent)" : "var(--warn)", fontWeight: 600 }}>{p.recomienda ? "👍" : "👎"}</span>
         </div>
-        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-          {esPendiente && (
-            <button onClick={() => handleAprobar(p.id)} style={{
-              background: "var(--accent-light)", color: "var(--accent)", border: "none",
-              borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit"
-            }}>✓ Aprobar</button>
-          )}
-          <button onClick={() => setEditandoProveedor({ ...p })} style={{
-            background: "var(--gold-light)", color: "var(--gold)", border: "none",
-            borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit"
-          }}>✏️ Editar</button>
-          <button onClick={() => handleRechazar(p.id)} style={{
-            background: "var(--warn-light)", color: "var(--warn)", border: "none",
-            borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit"
-          }}>{esPendiente ? "✕ Rechazar" : "🗑 Eliminar"}</button>
-        </div>
+        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>📞 {p.telefono}</p>
+        {p.descripcion && <p style={{ fontSize: 13, marginTop: 4 }}>{p.descripcion}</p>}
       </div>
-    );
-  };
+      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+        {esPendiente && (
+          <button onClick={() => handleAprobar(p.id)} style={{
+            background: "var(--accent-light)", color: "var(--accent)", border: "none",
+            borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit"
+          }}>✓ Aprobar</button>
+        )}
+        <button onClick={() => setEditandoProveedor({ ...p })} style={{
+          background: "var(--gold-light)", color: "var(--gold)", border: "none",
+          borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit"
+        }}>✏️ Editar</button>
+        <button onClick={() => handleRechazar(p.id)} style={{
+          background: "var(--warn-light)", color: "var(--warn)", border: "none",
+          borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit"
+        }}>{esPendiente ? "✕ Rechazar" : "🗑 Eliminar"}</button>
+      </div>
+    </div>
+  );
 
   const ModalEditarProveedor = () => {
     const [form, setForm] = useState({ ...editandoProveedor });
-    const [telefonoError, setTelefonoError] = useState("");
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
     const cats = todasCats.filter(c => cond.categorias_activas.includes(c.id));
-
-    // Extraer solo los dígitos del teléfono para editar (quitar el +56)
-    const [telefonoLocal, setTelefonoLocal] = useState(
-      form.telefono?.replace("+56", "").trim() || ""
-    );
-
-    const handleTelefono = (val) => {
-      const limpio = val.replace(/[^\d\s]/g, "");
-      setTelefonoLocal(limpio);
-      if (limpio && !validarTelefono(limpio.replace(/\s/g, ""))) {
-        setTelefonoError("Ingresa 9 dígitos comenzando con 9.");
-      } else {
-        setTelefonoError("");
-        set("telefono", `+56 ${limpio}`);
-      }
-    };
-
     return (
       <div style={{ position: "fixed", inset: 0, background: "rgba(28,26,22,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}
         onClick={e => e.target === e.currentTarget && setEditandoProveedor(null)}>
-        <div className="fade-up" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "28px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(28,26,22,0.2)", maxHeight: "90vh", overflowY: "auto" }}>
+        <div className="fade-up" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "28px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(28,26,22,0.2)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
             <h3 className="serif" style={{ fontSize: 22 }}>Editar proveedor</h3>
             <button onClick={() => setEditandoProveedor(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--text-muted)" }}>✕</button>
@@ -724,7 +587,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                 {cats.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>)}
               </select>
             </div>
-            <CampoTelefono value={telefonoLocal} onChange={e => handleTelefono(e.target.value)} error={telefonoError} />
+            <div><label style={labelStyle}>Teléfono / WhatsApp</label><input style={inputStyle} value={form.telefono} onChange={e => set("telefono", e.target.value)} /></div>
             <div><label style={labelStyle}>Descripción</label><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 70 }} value={form.descripcion || ""} onChange={e => set("descripcion", e.target.value)} /></div>
             <div>
               <label style={labelStyle}>¿Lo recomiendas?</label>
@@ -740,23 +603,9 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                 ))}
               </div>
             </div>
-            {!form.recomienda && (
-              <div className="fade-up">
-                <label style={labelStyle}>Motivo de no recomendación</label>
-                <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 70, borderColor: "var(--warn)" }}
-                  value={form.motivo_no_recomendacion || ""}
-                  onChange={e => set("motivo_no_recomendacion", e.target.value)}
-                  placeholder="¿Por qué no lo recomiendas?" />
-              </div>
-            )}
             <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
               <button onClick={() => setEditandoProveedor(null)} style={{ flex: 1, background: "var(--bg)", border: "1.5px solid var(--border)", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "var(--text-muted)" }}>Cancelar</button>
-              <button onClick={() => handleEditar(form.id, {
-                nombre: form.nombre, categoria: form.categoria,
-                telefono: form.telefono, descripcion: form.descripcion,
-                recomienda: form.recomienda,
-                motivo_no_recomendacion: !form.recomienda ? form.motivo_no_recomendacion : null
-              })} style={{ flex: 2, background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Guardar cambios</button>
+              <button onClick={() => handleEditar(form.id, { nombre: form.nombre, categoria: form.categoria, telefono: form.telefono, descripcion: form.descripcion, recomienda: form.recomienda })} style={{ flex: 2, background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Guardar cambios</button>
             </div>
           </div>
         </div>
@@ -810,63 +659,21 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           {tab === "proveedores" && (
             cargando ? <Cargando mensaje="Cargando proveedores..." /> :
             <div>
-              {/* Buscador */}
-              <input
-                placeholder="Buscar por nombre o descripción..."
-                value={busquedaAdmin}
-                onChange={e => setBusquedaAdmin(e.target.value)}
-                style={{ ...inputStyle, marginBottom: 20 }}
-              />
-              {pendientes.filter(p =>
-                p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) ||
-                p.descripcion?.toLowerCase().includes(busquedaAdmin.toLowerCase())
-              ).length > 0 && (
+              {pendientes.length > 0 && (
                 <div style={{ marginBottom: 28 }}>
                   <h3 className="serif" style={{ fontSize: 18, marginBottom: 12 }}>⏳ Pendientes <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}>({pendientes.length})</span></h3>
                   <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                    {pendientes
-                      .filter(p =>
-                        p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) ||
-                        p.descripcion?.toLowerCase().includes(busquedaAdmin.toLowerCase())
-                      )
-                      .map(p => <FilaProveedor key={p.id} p={p} esPendiente />)}
+                    {pendientes.map(p => <FilaProveedor key={p.id} p={p} esPendiente />)}
                   </div>
                 </div>
               )}
               <div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
-                  <h3 className="serif" style={{ fontSize: 18 }}>✅ Aprobados <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}>({aprobados.length})</span></h3>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    {[
-                      { id: "todos", label: "Todos" },
-                      { id: "recomendados", label: "👍 Recomendados" },
-                      { id: "no_recomendados", label: "👎 No recomendados" },
-                    ].map(f => (
-                      <button key={f.id} onClick={() => setFiltroAprobados(f.id)} style={{
-                        background: filtroAprobados === f.id ? "var(--accent)" : "var(--surface)",
-                        color: filtroAprobados === f.id ? "#fff" : "var(--text-muted)",
-                        border: `1.5px solid ${filtroAprobados === f.id ? "var(--accent)" : "var(--border)"}`,
-                        borderRadius: 999, padding: "4px 12px", fontSize: 12, fontWeight: 600,
-                        cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s"
-                      }}>{f.label}</button>
-                    ))}
-                  </div>
-                </div>
+                <h3 className="serif" style={{ fontSize: 18, marginBottom: 12 }}>✅ Aprobados <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}>({aprobados.length})</span></h3>
                 {aprobados.length === 0
                   ? <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Sin proveedores aprobados aún.</p>
-                  : (() => {
-                      const filtrados = aprobados.filter(p =>
-                        (filtroAprobados === "todos" ? true :
-                        filtroAprobados === "recomendados" ? p.recomienda : !p.recomienda) &&
-                        (p.nombre.toLowerCase().includes(busquedaAdmin.toLowerCase()) ||
-                        p.descripcion?.toLowerCase().includes(busquedaAdmin.toLowerCase()))
-                      );
-                      return filtrados.length === 0
-                        ? <p style={{ color: "var(--text-muted)", fontSize: 14 }}>No hay proveedores en esta categoría.</p>
-                        : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                            {filtrados.map(p => <FilaProveedor key={p.id} p={p} esPendiente={false} />)}
-                          </div>;
-                    })()
+                  : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {aprobados.map(p => <FilaProveedor key={p.id} p={p} esPendiente={false} />)}
+                  </div>
                 }
               </div>
             </div>
@@ -939,16 +746,77 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   );
 };
 
+// ── Reset Password ────────────────────────────────────────────────
+const ResetPassword = ({ token }) => {
+  const [password, setPassword] = useState("");
+  const [listo, setListo] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleReset = async () => {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: "PUT",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    if (data.email) {
+      setListo(true);
+    } else {
+      setError("Error al cambiar contraseña. Intenta de nuevo.");
+    }
+  };
+
+  if (listo) return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ textAlign: "center" }}>
+        <p style={{ fontSize: 40 }}>✅</p>
+        <h2 className="serif" style={{ fontSize: 24, marginTop: 12 }}>Contraseña actualizada</h2>
+        <a href="/admin" style={{ display: "inline-block", marginTop: 20, color: "var(--accent)", fontWeight: 600 }}>Ir al panel admin →</a>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div style={{ width: "100%", maxWidth: 380, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "32px", boxShadow: "var(--shadow)" }} className="fade-up">
+        <h2 className="serif" style={{ fontSize: 24, marginBottom: 6 }}>Nueva contraseña</h2>
+        <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 20 }}>Elige una contraseña segura para tu cuenta admin.</p>
+        <label style={labelStyle}>Contraseña nueva</label>
+        <input style={inputStyle} type="password" value={password}
+          onChange={e => setPassword(e.target.value)}
+          placeholder="••••••••"
+          onKeyDown={e => e.key === "Enter" && handleReset()} />
+        {error && <p style={{ fontSize: 13, color: "var(--warn)", marginTop: 8 }}>⚠ {error}</p>}
+        <button onClick={handleReset} disabled={!password} style={{
+          marginTop: 16, width: "100%", background: password ? "var(--accent)" : "var(--border)",
+          color: password ? "#fff" : "var(--text-muted)", border: "none", borderRadius: 10,
+          padding: 13, fontSize: 15, fontWeight: 600,
+          cursor: password ? "pointer" : "not-allowed", fontFamily: "inherit"
+        }}>Cambiar contraseña</button>
+      </div>
+    </div>
+  );
+};
+
 // ── App Principal ─────────────────────────────────────────────────
 export default function App() {
   const [condominios, setCondominios] = useState([]);
   const [todasCats, setTodasCats] = useState(TODAS_CATEGORIAS);
   const [cargandoApp, setCargandoApp] = useState(true);
-  const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem("adminToken") || null);
+  const [adminToken, setAdminToken] = useState(null);
   const [vista, setVista] = useState("publica");
 
   const path = window.location.pathname.replace(/^\//, "").replace(/\/$/, "");
   const esAdmin = path === "admin";
+
+  // Detectar recuperación de contraseña
+  const hash = window.location.hash;
+  const esRecovery = hash.includes("type=recovery");
+  const recoveryToken = esRecovery ? hash.match(/access_token=([^&]+)/)?.[1] : null;
 
   useEffect(() => {
     const init = async () => {
@@ -971,7 +839,6 @@ export default function App() {
 
   const handleLogout = async () => {
     if (adminToken) await authLogout(adminToken);
-    sessionStorage.removeItem("adminToken");
     setAdminToken(null);
   };
 
@@ -984,11 +851,24 @@ export default function App() {
     );
   }
 
+  // ── Ruta recuperación de contraseña ──────────────────────────
+  if (esRecovery && recoveryToken) {
+    return (
+      <>
+        <style>{defaultCSS}</style>
+        <ResetPassword token={recoveryToken} />
+      </>
+    );
+  }
+
   // ── Ruta /admin ───────────────────────────────────────────────
   if (esAdmin) {
     const adminCSS = buildCSS({
-      accent: "#3D4F6B", accentLight: "#D9DEE8",
-      bg: "#F2F3F5", surface: "#FAFAFA", border: "#DDE0E6"
+      accent: "#3D4F6B",
+      accentLight: "#D9DEE8",
+      bg: "#F2F3F5",
+      surface: "#FAFAFA",
+      border: "#DDE0E6"
     });
     return (
       <>
