@@ -23,7 +23,6 @@ const query = async (table, options = {}) => {
     "Content-Type": "application/json",
     Prefer: "return=representation",
   };
-  
   if (filter) url += `&${filter}`;
   if (insert) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, { method: "POST", headers, body: JSON.stringify(insert) });
