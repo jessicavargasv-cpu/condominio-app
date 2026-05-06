@@ -2,12 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs";
 import {
   Wrench, Zap, Flame, Scissors, Eye, Leaf, Waves, Bug,
-  PawPrint, Dog, Cat, Bird,
   Car, CircleDot, Gauge, Truck,
   HeartPulse, Baby, User, Users,
   FileText, Monitor, Package, MoreHorizontal,
   Search, ChevronDown, ArrowRight, Phone, Star, Shield
-} from "https://esm.sh/lucide-react@0.383.0";
+} from "lucide-react";
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
 const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
