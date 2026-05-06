@@ -11,8 +11,7 @@ import {
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
 const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
-const SUPABASE_KEY = "sb_publishable_3mzA7ePIapL8XEhlno1bZQ_jU0sF9h2";
-
+const SUPABASE_KEY = "sb_publishable_3mzA7ePIapL8XEhlno1bZQ_jU0sF9h2"
 // ── API Supabase ──────────────────────────────────────────────────
 const query = async (table, options = {}) => {
   const { filter, insert, update, remove, select = "*" } = options;
@@ -290,45 +289,43 @@ const ComoFunciona = ({ onProponer }) => {
   );
 };
 
-// ── Navbar con tabs y dropdown ────────────────────────────────────
+// ── Navbar con tabs y dropdown (clic) ────────────────────────────
 const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCategoria, onFiltroGrupo, onFiltroCategoria, condominio, onProponer, busqueda, onBusqueda }) => {
-  const [grupoHover, setGrupoHover] = useState(null);
-  const timeoutRef = useRef(null);
+  const [grupoAbierto, setGrupoAbierto] = useState(null);
+  const navRef = useRef(null);
 
   const gruposConCats = grupos.map(g => ({
     ...g,
     cats: todasCats.filter(c => c.grupo === g.id && categoriasActivas.includes(c.id)),
   })).filter(g => g.cats.length > 0);
 
-  const handleMouseEnterGrupo = (id) => { clearTimeout(timeoutRef.current); setGrupoHover(id); };
-  const handleMouseLeaveArea = () => { timeoutRef.current = setTimeout(() => setGrupoHover(null), 150); };
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    const handleClickFuera = (e) => {
+      if (navRef.current && !navRef.current.contains(e.target)) {
+        setGrupoAbierto(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickFuera);
+    return () => document.removeEventListener("mousedown", handleClickFuera);
+  }, []);
+
+  const toggleGrupo = (id) => setGrupoAbierto(prev => prev === id ? null : id);
 
   return (
-    <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 30 }}>
+    <div ref={navRef} style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 30 }}>
 
-      {/* Fila 1: nombre + buscador + botón */}
-      <div style={{ padding: "14px 32px", display: "flex", alignItems: "center", gap: 16 }}>
-        <div style={{ flexShrink: 0 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 1 }}>Directorio de Servicios</p>
-          <h1 className="serif" style={{ fontSize: 20, lineHeight: 1.1 }}>{condominio.nombre}</h1>
+      {/* Fila 1: nombre prominente + botón */}
+      <div style={{ padding: "16px 32px 10px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 3 }}>Directorio de Servicios</p>
+          <h1 className="serif" style={{ fontSize: 30, lineHeight: 1.1, fontWeight: 400 }}>{condominio.nombre}</h1>
         </div>
-
-        {/* Buscador centrado */}
-        <div style={{ flex: 1, position: "relative" }}>
-          <Search size={15} color="var(--text-muted)" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-          <input
-            placeholder="Buscar servicios por nombre o descripción..."
-            value={busqueda}
-            onChange={e => onBusqueda(e.target.value)}
-            style={{ ...inputStyle, paddingLeft: 34, background: "var(--bg)", fontSize: 13 }}
-          />
-        </div>
-
         <button onClick={onProponer} style={{
           background: "var(--accent)", color: "#fff", border: "none",
           borderRadius: 9, padding: "9px 18px", fontSize: 13, fontWeight: 600,
           cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center",
-          gap: 6, transition: "opacity 0.2s", whiteSpace: "nowrap", flexShrink: 0,
+          gap: 6, transition: "opacity 0.2s", whiteSpace: "nowrap", flexShrink: 0, marginTop: 4,
         }}
           onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
           onMouseLeave={e => e.currentTarget.style.opacity = "1"}
@@ -337,33 +334,49 @@ const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCate
         </button>
       </div>
 
-      {/* Fila 2: tabs de grupos con dropdown */}
-      <div style={{ padding: "0 32px", overflowX: "auto", borderTop: "1px solid var(--border)" }}
-        onMouseLeave={handleMouseLeaveArea}>
+      {/* Fila 2: buscador con X */}
+      <div style={{ padding: "0 32px 12px", position: "relative" }}>
+        <Search size={15} color="var(--text-muted)" style={{ position: "absolute", left: 44, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+        <input
+          placeholder="Buscar servicios por nombre o descripción..."
+          value={busqueda}
+          onChange={e => onBusqueda(e.target.value)}
+          style={{ ...inputStyle, paddingLeft: 36, paddingRight: busqueda ? 36 : 14, background: "var(--bg)", fontSize: 13 }}
+        />
+        {busqueda && (
+          <button onClick={() => onBusqueda("")} style={{
+            position: "absolute", right: 44, top: "50%", transform: "translateY(-50%)",
+            background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)",
+            display: "flex", alignItems: "center", padding: 4, borderRadius: "50%",
+            fontSize: 16, lineHeight: 1,
+          }}>✕</button>
+        )}
+      </div>
+
+      {/* Fila 3: tabs de grupos con dropdown por clic */}
+      <div style={{ padding: "0 32px", overflowX: "auto", borderTop: "1px solid var(--border)" }}>
         <div style={{ display: "flex", gap: 0 }}>
 
-          {/* Tab inicio */}
+          {/* Tab Inicio */}
           <button
-            onClick={() => { onFiltroGrupo(null); onFiltroCategoria(null); }}
+            onClick={() => { onFiltroGrupo(null); onFiltroCategoria(null); setGrupoAbierto(null); }}
             style={{
               background: "none", border: "none",
               borderBottom: `2px solid ${!filtroGrupo ? "var(--accent)" : "transparent"}`,
               padding: "11px 18px", fontSize: 13, fontWeight: !filtroGrupo ? 600 : 400,
               color: !filtroGrupo ? "var(--accent)" : "var(--text-muted)",
-              cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-              transition: "all 0.15s",
+              cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap", transition: "all 0.15s",
             }}>
             Inicio
           </button>
 
           {gruposConCats.map(grupo => {
             const activo = filtroGrupo === grupo.id;
-            const abierto = grupoHover === grupo.id;
+            const abierto = grupoAbierto === grupo.id;
             return (
-              <div key={grupo.id} style={{ position: "relative" }}
-                onMouseEnter={() => handleMouseEnterGrupo(grupo.id)}>
+              <div key={grupo.id} style={{ position: "relative" }}>
                 <button
-                  onClick={() => { onFiltroGrupo(grupo.id); onFiltroCategoria(null); setGrupoHover(null); }}
+                  onClick={() => toggleGrupo(grupo.id)}
                   style={{
                     background: "none", border: "none",
                     borderBottom: `2px solid ${activo ? "var(--accent)" : "transparent"}`,
@@ -373,38 +386,38 @@ const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCate
                     transition: "all 0.15s", display: "flex", alignItems: "center", gap: 6,
                   }}
                   onMouseEnter={e => { if (!activo) e.currentTarget.style.color = "var(--text)"; }}
-                  onMouseLeave={e => { if (!activo) e.currentTarget.style.color = "var(--text-muted)"; }}
+                  onMouseLeave={e => { if (!activo) e.currentTarget.style.color = activo ? "var(--accent)" : "var(--text-muted)"; }}
                 >
                   <grupo.Icon size={13} strokeWidth={2} />
                   {grupo.label}
-                  <ChevronDown size={11} strokeWidth={2.5} style={{ transition: "transform 0.15s", transform: abierto ? "rotate(180deg)" : "rotate(0deg)" }} />
+                  <ChevronDown size={11} strokeWidth={2.5} style={{ transition: "transform 0.2s", transform: abierto ? "rotate(180deg)" : "rotate(0deg)" }} />
                 </button>
 
-                {/* Dropdown — z-index alto para no quedar tapado */}
+                {/* Dropdown */}
                 {abierto && (
                   <div className="fade-in" style={{
                     position: "absolute", top: "calc(100% + 1px)", left: 0, zIndex: 200,
                     background: "var(--surface)", border: "1px solid var(--border)",
                     borderRadius: 12, boxShadow: "var(--shadow-md)",
-                    padding: "8px", minWidth: 200,
-                  }}
-                    onMouseEnter={() => clearTimeout(timeoutRef.current)}
-                    onMouseLeave={handleMouseLeaveArea}
-                  >
-                    {/* Opción ver todo el grupo */}
+                    padding: "8px", minWidth: 210,
+                  }}>
+                    {/* Ver todo el grupo */}
                     <button
-                      onClick={() => { onFiltroGrupo(grupo.id); onFiltroCategoria(null); setGrupoHover(null); }}
+                      onClick={() => { onFiltroGrupo(grupo.id); onFiltroCategoria(null); setGrupoAbierto(null); }}
                       style={{
                         width: "100%", textAlign: "left",
                         background: activo && !filtroCategoria ? "var(--accent-light)" : "none",
                         border: "none", borderRadius: 8, padding: "8px 12px",
-                        fontSize: 12, fontWeight: 600,
+                        fontSize: 11, fontWeight: 700,
                         color: activo && !filtroCategoria ? "var(--accent)" : "var(--text-muted)",
                         cursor: "pointer", fontFamily: "inherit",
                         display: "flex", alignItems: "center", gap: 8,
-                        borderBottom: "1px solid var(--border)", marginBottom: 4,
-                        letterSpacing: "0.04em", textTransform: "uppercase",
-                      }}>
+                        borderBottom: "1px solid var(--border)", marginBottom: 4, paddingBottom: 10,
+                        letterSpacing: "0.05em", textTransform: "uppercase",
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = "var(--bg)"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = activo && !filtroCategoria ? "var(--accent-light)" : "none"; }}
+                    >
                       <grupo.Icon size={12} strokeWidth={2} /> Ver todos en {grupo.label}
                     </button>
 
@@ -412,7 +425,7 @@ const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCate
                       const catActiva = filtroCategoria === cat.id;
                       return (
                         <button key={cat.id}
-                          onClick={() => { onFiltroCategoria(cat.id); onFiltroGrupo(grupo.id); setGrupoHover(null); }}
+                          onClick={() => { onFiltroCategoria(cat.id); onFiltroGrupo(grupo.id); setGrupoAbierto(null); }}
                           style={{
                             width: "100%", textAlign: "left",
                             background: catActiva ? "var(--accent-light)" : "none",
