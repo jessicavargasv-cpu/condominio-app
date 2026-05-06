@@ -10,8 +10,8 @@ import {
 } from "https://esm.sh/lucide-react@0.383.0";
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
-const SUPABASE_URL = "TU_PROJECT_URL";
-const SUPABASE_KEY = "TU_PUBLISHABLE_KEY";
+const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
+const SUPABASE_KEY = "sb_publishable_3mzA7ePIapL8XEhlno1bZQ_jU0sF9h2";
 
 // ── API Supabase ──────────────────────────────────────────────────
 const query = async (table, options = {}) => {
