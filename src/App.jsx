@@ -2,11 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs";
 import {
   Wrench, Zap, Flame, Scissors, Eye, Leaf, Waves, Bug,
-  PawPrint, Dog, Cat, Bird,
-  Car, CircleDot, Gauge, Truck,
-  HeartPulse, Baby, User, Users,
-  FileText, Monitor, Package, MoreHorizontal,
-  Search, ChevronDown, ArrowRight, Phone, Star, Shield
+  PawPrint, Dog, Cat,
+  Car, CircleDot, Gauge,
+  HeartPulse, Baby, Users,
+  FileText, Package, MoreHorizontal,
+  Search, ChevronDown, ArrowRight, Phone, Star, Shield, PlusCircle
 } from "lucide-react";
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
@@ -133,7 +133,7 @@ const buildCSS = (c) => `
     --gold-light: #FDF3DC;
     --radius: 14px;
     --shadow: 0 2px 16px rgba(28,26,22,0.07);
-    --shadow-md: 0 8px 32px rgba(28,26,22,0.12);
+    --shadow-md: 0 8px 32px rgba(28,26,22,0.13);
   }
   body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); }
   .serif { font-family: 'DM Serif Display', serif; }
@@ -145,7 +145,7 @@ const buildCSS = (c) => `
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { animation: spin 0.8s linear infinite; display: inline-block; }
   @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
-  .fade-in { animation: fadeIn 0.2s ease forwards; }
+  .fade-in { animation: fadeIn 0.15s ease forwards; }
 `;
 
 const defaultCSS = buildCSS({ accent: "#4A7C6F", accentLight: "#D4EAE5", bg: "#F6F7F5", surface: "#FFFFFF", border: "#E4E8E4" });
@@ -159,6 +159,17 @@ const labelStyle = {
   fontSize: 11, fontWeight: 600, color: "var(--text-muted)",
   letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6, display: "block",
 };
+
+// ── Footer ────────────────────────────────────────────────────────
+const Footer = () => (
+  <footer style={{
+    borderTop: "1px solid var(--border)", background: "var(--surface)",
+    padding: "18px 32px", textAlign: "center",
+    fontSize: 12, color: "var(--text-muted)",
+  }}>
+    Copyright © 2026 <strong style={{ color: "var(--text)" }}>ARVA Tech</strong> | Todos los derechos reservados
+  </footer>
+);
 
 // ── Spinner ───────────────────────────────────────────────────────
 const Cargando = ({ mensaje = "Cargando..." }) => (
@@ -184,8 +195,8 @@ const Badge = ({ categoriaId, todasCats }) => {
   );
 };
 
-// ── Tarjeta proveedor ─────────────────────────────────────────────
-const ProveedorCard = ({ p, todasCats }) => (
+// ── Tarjeta servicio ──────────────────────────────────────────────
+const ServicioCard = ({ p, todasCats }) => (
   <div className="fade-up" style={{
     background: "var(--surface)", border: "1px solid var(--border)",
     borderRadius: "var(--radius)", padding: "20px 22px",
@@ -209,7 +220,7 @@ const ProveedorCard = ({ p, todasCats }) => (
       alignSelf: "flex-start", fontSize: 11, fontWeight: 600,
       color: p.recomienda ? "var(--accent)" : "var(--warn)",
       background: p.recomienda ? "var(--accent-light)" : "var(--warn-light)",
-      padding: "3px 10px", borderRadius: 999, display: "flex", alignItems: "center", gap: 4,
+      padding: "3px 10px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4,
     }}>
       {p.recomienda ? <><Star size={10} strokeWidth={2} /> Recomendado</> : "👎 No recomendado"}
     </span>
@@ -219,34 +230,23 @@ const ProveedorCard = ({ p, todasCats }) => (
 // ── Sección Cómo Funciona ─────────────────────────────────────────
 const ComoFunciona = ({ onProponer }) => {
   const pasos = [
-    {
-      Icon: Search,
-      titulo: "Explora los servicios",
-      desc: "Navega por categorías y encuentra el tipo de servicio que necesitas para tu hogar.",
-    },
-    {
-      Icon: Shield,
-      titulo: "Revisa al proveedor",
-      desc: "Lee la descripción y la recomendación de tus propios vecinos antes de decidir.",
-    },
-    {
-      Icon: Phone,
-      titulo: "Contáctalo en 1 clic",
-      desc: "Escríbele directo por WhatsApp o llámalo al instante. Sin intermediarios.",
-    },
+    { Icon: Search,      titulo: "Explora los servicios",   desc: "Navega por categorías y encuentra el tipo de servicio que necesitas para tu hogar." },
+    { Icon: Shield,      titulo: "Revisa al proveedor",     desc: "Lee la descripción y la recomendación de tus propios vecinos antes de decidir." },
+    { Icon: Phone,       titulo: "Contáctalo en 1 clic",    desc: "Escríbele directo por WhatsApp o llámalo al instante. Sin intermediarios." },
+    { Icon: PlusCircle,  titulo: "Sugiere un servicio",     desc: "¿Conoces uno bueno? Compártelo con tu comunidad y ayuda a tus vecinos." },
   ];
 
   return (
-    <div style={{ padding: "56px 24px 72px", maxWidth: 860, margin: "0 auto" }}>
+    <div style={{ padding: "56px 32px 72px", width: "100%" }}>
       <div style={{ textAlign: "center", marginBottom: 48 }} className="fade-up">
         <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 10 }}>Directorio vecinal</p>
-        <h2 className="serif" style={{ fontSize: 36, lineHeight: 1.2, marginBottom: 14 }}>¿Cómo funciona?</h2>
-        <p style={{ color: "var(--text-muted)", fontSize: 15, lineHeight: 1.65, maxWidth: 460, margin: "0 auto" }}>
+        <h2 className="serif" style={{ fontSize: 38, lineHeight: 1.2, marginBottom: 14 }}>¿Cómo funciona?</h2>
+        <p style={{ color: "var(--text-muted)", fontSize: 15, lineHeight: 1.65, maxWidth: 500, margin: "0 auto" }}>
           Un directorio de servicios verificados por tus propios vecinos. Simple, confiable y sin publicidad.
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24, marginBottom: 48 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 24, marginBottom: 52 }}>
         {pasos.map((paso, i) => (
           <div key={i} className="fade-up" style={{
             background: "var(--surface)", border: "1px solid var(--border)",
@@ -257,15 +257,13 @@ const ComoFunciona = ({ onProponer }) => {
             <div style={{
               width: 52, height: 52, borderRadius: "50%",
               background: "var(--accent-light)", display: "flex",
-              alignItems: "center", justifyContent: "center",
-              margin: "0 auto 16px",
+              alignItems: "center", justifyContent: "center", margin: "0 auto 16px",
             }}>
               <paso.Icon size={22} color="var(--accent)" strokeWidth={1.75} />
             </div>
-            <div style={{
-              fontSize: 11, fontWeight: 700, color: "var(--accent)",
-              letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8,
-            }}>Paso {i + 1}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--accent)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+              Paso {i + 1}
+            </div>
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{paso.titulo}</h3>
             <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.65 }}>{paso.desc}</p>
           </div>
@@ -274,7 +272,7 @@ const ComoFunciona = ({ onProponer }) => {
 
       <div style={{ textAlign: "center" }} className="fade-up">
         <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 16 }}>
-          ¿Conoces un buen proveedor? Compártelo con tu comunidad.
+          ¿Conoces un buen servicio? Compártelo con tu comunidad.
         </p>
         <button onClick={onProponer} style={{
           background: "var(--accent)", color: "#fff", border: "none",
@@ -285,7 +283,7 @@ const ComoFunciona = ({ onProponer }) => {
           onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
           onMouseLeave={e => e.currentTarget.style.opacity = "1"}
         >
-          Proponer un proveedor <ArrowRight size={15} strokeWidth={2} />
+          Sugerir un servicio <ArrowRight size={15} strokeWidth={2} />
         </button>
       </div>
     </div>
@@ -293,7 +291,7 @@ const ComoFunciona = ({ onProponer }) => {
 };
 
 // ── Navbar con tabs y dropdown ────────────────────────────────────
-const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCategoria, onFiltroGrupo, onFiltroCategoria, condominio, onProponer }) => {
+const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCategoria, onFiltroGrupo, onFiltroCategoria, condominio, onProponer, busqueda, onBusqueda }) => {
   const [grupoHover, setGrupoHover] = useState(null);
   const timeoutRef = useRef(null);
 
@@ -302,50 +300,60 @@ const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCate
     cats: todasCats.filter(c => c.grupo === g.id && categoriasActivas.includes(c.id)),
   })).filter(g => g.cats.length > 0);
 
-  const handleMouseEnterGrupo = (id) => {
-    clearTimeout(timeoutRef.current);
-    setGrupoHover(id);
-  };
-  const handleMouseLeaveArea = () => {
-    timeoutRef.current = setTimeout(() => setGrupoHover(null), 150);
-  };
+  const handleMouseEnterGrupo = (id) => { clearTimeout(timeoutRef.current); setGrupoHover(id); };
+  const handleMouseLeaveArea = () => { timeoutRef.current = setTimeout(() => setGrupoHover(null), 150); };
 
   return (
     <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 30 }}>
-      {/* Header principal */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "16px 24px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16 }}>
-        <div>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 2 }}>Directorio de Servicios</p>
-          <h1 className="serif" style={{ fontSize: 22, lineHeight: 1.1 }}>{condominio.nombre}</h1>
+
+      {/* Fila 1: nombre + buscador + botón */}
+      <div style={{ padding: "14px 32px", display: "flex", alignItems: "center", gap: 16 }}>
+        <div style={{ flexShrink: 0 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 1 }}>Directorio de Servicios</p>
+          <h1 className="serif" style={{ fontSize: 20, lineHeight: 1.1 }}>{condominio.nombre}</h1>
         </div>
+
+        {/* Buscador centrado */}
+        <div style={{ flex: 1, position: "relative" }}>
+          <Search size={15} color="var(--text-muted)" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+          <input
+            placeholder="Buscar servicios por nombre o descripción..."
+            value={busqueda}
+            onChange={e => onBusqueda(e.target.value)}
+            style={{ ...inputStyle, paddingLeft: 34, background: "var(--bg)", fontSize: 13 }}
+          />
+        </div>
+
         <button onClick={onProponer} style={{
           background: "var(--accent)", color: "#fff", border: "none",
           borderRadius: 9, padding: "9px 18px", fontSize: 13, fontWeight: 600,
           cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center",
-          gap: 6, transition: "opacity 0.2s", whiteSpace: "nowrap",
+          gap: 6, transition: "opacity 0.2s", whiteSpace: "nowrap", flexShrink: 0,
         }}
           onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
           onMouseLeave={e => e.currentTarget.style.opacity = "1"}
         >
-          + Proponer proveedor
+          + Sugerir servicio
         </button>
       </div>
 
-      {/* Tabs de grupos */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 24px", overflowX: "auto", position: "relative" }}
+      {/* Fila 2: tabs de grupos con dropdown */}
+      <div style={{ padding: "0 32px", overflowX: "auto", borderTop: "1px solid var(--border)" }}
         onMouseLeave={handleMouseLeaveArea}>
-        <div style={{ display: "flex", gap: 2, borderTop: "1px solid var(--border)", paddingBottom: 0 }}>
-          {/* Tab "Todos" */}
+        <div style={{ display: "flex", gap: 0 }}>
+
+          {/* Tab inicio */}
           <button
             onClick={() => { onFiltroGrupo(null); onFiltroCategoria(null); }}
             style={{
-              background: "none", border: "none", borderBottom: `2px solid ${!filtroGrupo ? "var(--accent)" : "transparent"}`,
-              padding: "12px 16px", fontSize: 13, fontWeight: !filtroGrupo ? 600 : 400,
+              background: "none", border: "none",
+              borderBottom: `2px solid ${!filtroGrupo ? "var(--accent)" : "transparent"}`,
+              padding: "11px 18px", fontSize: 13, fontWeight: !filtroGrupo ? 600 : 400,
               color: !filtroGrupo ? "var(--accent)" : "var(--text-muted)",
               cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-              transition: "all 0.15s", display: "flex", alignItems: "center", gap: 6,
+              transition: "all 0.15s",
             }}>
-            ¿Cómo funciona?
+            Inicio
           </button>
 
           {gruposConCats.map(grupo => {
@@ -359,7 +367,7 @@ const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCate
                   style={{
                     background: "none", border: "none",
                     borderBottom: `2px solid ${activo ? "var(--accent)" : "transparent"}`,
-                    padding: "12px 16px", fontSize: 13, fontWeight: activo ? 600 : 400,
+                    padding: "11px 18px", fontSize: 13, fontWeight: activo ? 600 : 400,
                     color: activo ? "var(--accent)" : "var(--text-muted)",
                     cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
                     transition: "all 0.15s", display: "flex", alignItems: "center", gap: 6,
@@ -367,29 +375,47 @@ const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCate
                   onMouseEnter={e => { if (!activo) e.currentTarget.style.color = "var(--text)"; }}
                   onMouseLeave={e => { if (!activo) e.currentTarget.style.color = "var(--text-muted)"; }}
                 >
-                  <grupo.Icon size={14} strokeWidth={2} />
+                  <grupo.Icon size={13} strokeWidth={2} />
                   {grupo.label}
-                  <ChevronDown size={12} strokeWidth={2} style={{ transition: "transform 0.15s", transform: abierto ? "rotate(180deg)" : "rotate(0deg)" }} />
+                  <ChevronDown size={11} strokeWidth={2.5} style={{ transition: "transform 0.15s", transform: abierto ? "rotate(180deg)" : "rotate(0deg)" }} />
                 </button>
 
-                {/* Dropdown subcategorías */}
+                {/* Dropdown — z-index alto para no quedar tapado */}
                 {abierto && (
                   <div className="fade-in" style={{
-                    position: "absolute", top: "100%", left: 0, zIndex: 50,
+                    position: "absolute", top: "calc(100% + 1px)", left: 0, zIndex: 200,
                     background: "var(--surface)", border: "1px solid var(--border)",
                     borderRadius: 12, boxShadow: "var(--shadow-md)",
-                    padding: "8px", minWidth: 190,
+                    padding: "8px", minWidth: 200,
                   }}
                     onMouseEnter={() => clearTimeout(timeoutRef.current)}
                     onMouseLeave={handleMouseLeaveArea}
                   >
+                    {/* Opción ver todo el grupo */}
+                    <button
+                      onClick={() => { onFiltroGrupo(grupo.id); onFiltroCategoria(null); setGrupoHover(null); }}
+                      style={{
+                        width: "100%", textAlign: "left",
+                        background: activo && !filtroCategoria ? "var(--accent-light)" : "none",
+                        border: "none", borderRadius: 8, padding: "8px 12px",
+                        fontSize: 12, fontWeight: 600,
+                        color: activo && !filtroCategoria ? "var(--accent)" : "var(--text-muted)",
+                        cursor: "pointer", fontFamily: "inherit",
+                        display: "flex", alignItems: "center", gap: 8,
+                        borderBottom: "1px solid var(--border)", marginBottom: 4,
+                        letterSpacing: "0.04em", textTransform: "uppercase",
+                      }}>
+                      <grupo.Icon size={12} strokeWidth={2} /> Ver todos en {grupo.label}
+                    </button>
+
                     {grupo.cats.map(cat => {
                       const catActiva = filtroCategoria === cat.id;
                       return (
                         <button key={cat.id}
                           onClick={() => { onFiltroCategoria(cat.id); onFiltroGrupo(grupo.id); setGrupoHover(null); }}
                           style={{
-                            width: "100%", textAlign: "left", background: catActiva ? "var(--accent-light)" : "none",
+                            width: "100%", textAlign: "left",
+                            background: catActiva ? "var(--accent-light)" : "none",
                             border: "none", borderRadius: 8, padding: "9px 12px",
                             fontSize: 13, fontWeight: catActiva ? 600 : 400,
                             color: catActiva ? "var(--accent)" : "var(--text)",
@@ -420,7 +446,7 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
   const [filtroGrupo, setFiltroGrupo] = useState(null);
   const [filtroCategoria, setFiltroCategoria] = useState(null);
   const [busqueda, setBusqueda] = useState("");
-  const [proveedores, setProveedores] = useState([]);
+  const [servicios, setServicios] = useState([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
@@ -429,13 +455,13 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
       const data = await query("proveedores", {
         filter: `condominio=eq.${condominio.slug}&estado=eq.aprobado&order=id.desc`,
       });
-      setProveedores(Array.isArray(data) ? data : []);
+      setServicios(Array.isArray(data) ? data : []);
       setCargando(false);
     };
     cargar();
   }, [condominio.slug]);
 
-  const filtrados = proveedores.filter(p => {
+  const filtrados = servicios.filter(p => {
     const cat = todasCats.find(c => c.id === p.categoria);
     const matchGrupo = !filtroGrupo || cat?.grupo === filtroGrupo;
     const matchCat = !filtroCategoria || p.categoria === filtroCategoria;
@@ -454,7 +480,7 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
       : null;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
       <NavTabs
         grupos={GRUPOS}
         todasCats={todasCats}
@@ -465,75 +491,65 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
         onFiltroCategoria={setFiltroCategoria}
         condominio={condominio}
         onProponer={onProponer}
+        busqueda={busqueda}
+        onBusqueda={setBusqueda}
       />
 
-      {/* Buscador */}
-      <div style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", padding: "14px 24px" }}>
-        <div style={{ maxWidth: 1100, margin: "0 auto", position: "relative" }}>
-          <Search size={16} color="var(--text-muted)" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
-          <input
-            placeholder="Buscar por nombre o descripción..."
-            value={busqueda}
-            onChange={e => setBusqueda(e.target.value)}
-            style={{ ...inputStyle, paddingLeft: 38, background: "var(--bg)" }}
-          />
-        </div>
+      <div style={{ flex: 1 }}>
+        {mostrarLanding ? (
+          <ComoFunciona onProponer={onProponer} />
+        ) : (
+          <div style={{ padding: "28px 32px 56px", width: "100%" }}>
+            {/* Breadcrumb */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Mostrando:</span>
+              {labelFiltroActivo && (
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)", background: "var(--accent-light)", padding: "3px 12px", borderRadius: 999 }}>
+                  {labelFiltroActivo}
+                </span>
+              )}
+              {busqueda && (
+                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", background: "var(--border)", padding: "3px 12px", borderRadius: 999 }}>
+                  "{busqueda}"
+                </span>
+              )}
+              <button onClick={() => { setFiltroGrupo(null); setFiltroCategoria(null); setBusqueda(""); }}
+                style={{ background: "none", border: "none", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>
+                Limpiar
+              </button>
+            </div>
+
+            {cargando ? (
+              <Cargando mensaje="Cargando servicios..." />
+            ) : filtrados.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-muted)" }}>
+                <Search size={36} strokeWidth={1.25} style={{ margin: "0 auto 12px", display: "block", opacity: 0.4 }} />
+                <p style={{ fontSize: 15 }}>No hay servicios en esta categoría aún.</p>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
+                {filtrados.map((p, i) => (
+                  <div key={p.id} style={{ animationDelay: `${i * 0.05}s` }}>
+                    <ServicioCard p={p} todasCats={todasCats} />
+                  </div>
+                ))}
+              </div>
+            )}
+            {!cargando && filtrados.length > 0 && (
+              <p style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 12, marginTop: 32 }}>
+                {filtrados.length} servicio{filtrados.length !== 1 ? "s" : ""} verificado{filtrados.length !== 1 ? "s" : ""}
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Contenido */}
-      {mostrarLanding ? (
-        <ComoFunciona onProponer={onProponer} />
-      ) : (
-        <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 24px 56px" }}>
-          {/* Breadcrumb */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 13, color: "var(--text-muted)" }}>Mostrando:</span>
-            {labelFiltroActivo && (
-              <span style={{
-                fontSize: 13, fontWeight: 600, color: "var(--accent)",
-                background: "var(--accent-light)", padding: "3px 12px", borderRadius: 999,
-              }}>{labelFiltroActivo}</span>
-            )}
-            {busqueda && (
-              <span style={{
-                fontSize: 13, fontWeight: 600, color: "var(--text-muted)",
-                background: "var(--border)", padding: "3px 12px", borderRadius: 999,
-              }}>"{busqueda}"</span>
-            )}
-            <button onClick={() => { setFiltroGrupo(null); setFiltroCategoria(null); setBusqueda(""); }}
-              style={{ background: "none", border: "none", fontSize: 12, color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>
-              Limpiar
-            </button>
-          </div>
-
-          {cargando ? (
-            <Cargando mensaje="Cargando proveedores..." />
-          ) : filtrados.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px 0", color: "var(--text-muted)" }}>
-              <Search size={36} strokeWidth={1.25} style={{ margin: "0 auto 12px", display: "block", opacity: 0.4 }} />
-              <p style={{ fontSize: 15 }}>No hay proveedores en esta categoría aún.</p>
-            </div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-              {filtrados.map((p, i) => (
-                <div key={p.id} style={{ animationDelay: `${i * 0.05}s` }}>
-                  <ProveedorCard p={p} todasCats={todasCats} />
-                </div>
-              ))}
-            </div>
-          )}
-          {!cargando && filtrados.length > 0 && (
-            <p style={{ textAlign: "center", color: "var(--text-muted)", fontSize: 12, marginTop: 32 }}>
-              {filtrados.length} proveedor{filtrados.length !== 1 ? "es" : ""} verificado{filtrados.length !== 1 ? "s" : ""}
-            </p>
-          )}
-        </div>
-      )}
+      <Footer />
     </div>
   );
 };
 
-// ── Formulario Propuesta ──────────────────────────────────────────
+// ── Formulario Sugerir Servicio ───────────────────────────────────
 const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
   const [form, setForm] = useState({ nombre: "", categoria: "", telefono: "", descripcion: "", recomienda: true });
   const [enviado, setEnviado] = useState(false);
@@ -559,86 +575,92 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
   const gruposConCats = GRUPOS.map(g => ({ ...g, cats: cats.filter(c => c.grupo === g.id) })).filter(g => g.cats.length > 0);
 
   if (enviado) return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div style={{ textAlign: "center", maxWidth: 380 }} className="fade-up">
-        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--accent-light)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
-          <Shield size={28} color="var(--accent)" strokeWidth={1.75} />
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <div style={{ textAlign: "center", maxWidth: 380 }} className="fade-up">
+          <div style={{ width: 64, height: 64, borderRadius: "50%", background: "var(--accent-light)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+            <Shield size={28} color="var(--accent)" strokeWidth={1.75} />
+          </div>
+          <h2 className="serif" style={{ fontSize: 28, marginBottom: 10 }}>¡Sugerencia enviada!</h2>
+          <p style={{ color: "var(--text-muted)", lineHeight: 1.6, fontSize: 14 }}>
+            Un administrador de <strong>{condominio.nombre}</strong> revisará la información antes de publicarla.
+          </p>
+          <button onClick={onVolver} style={{
+            marginTop: 24, background: "var(--accent)", color: "#fff", border: "none",
+            borderRadius: 10, padding: "12px 28px", fontSize: 14, fontWeight: 600,
+            cursor: "pointer", fontFamily: "inherit",
+          }}>Volver al directorio</button>
         </div>
-        <h2 className="serif" style={{ fontSize: 28, marginBottom: 10 }}>¡Propuesta enviada!</h2>
-        <p style={{ color: "var(--text-muted)", lineHeight: 1.6, fontSize: 14 }}>
-          Un administrador de <strong>{condominio.nombre}</strong> revisará la información antes de publicarla.
-        </p>
-        <button onClick={onVolver} style={{
-          marginTop: 24, background: "var(--accent)", color: "#fff", border: "none",
-          borderRadius: 10, padding: "12px 28px", fontSize: 14, fontWeight: 600,
-          cursor: "pointer", fontFamily: "inherit",
-        }}>Volver al directorio</button>
       </div>
+      <Footer />
     </div>
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "32px 24px" }}>
-      <div style={{ maxWidth: 520, margin: "0 auto" }} className="fade-up">
-        <button onClick={onVolver} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 14, padding: "0 0 20px", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
-          ← Volver
-        </button>
-        <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "28px", boxShadow: "var(--shadow)" }}>
-          <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 4 }}>{condominio.nombre}</p>
-          <h2 className="serif" style={{ fontSize: 26, marginBottom: 4 }}>Proponer proveedor</h2>
-          <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 24 }}>La información será revisada antes de publicarse.</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <div>
-              <label style={labelStyle}>Nombre o empresa *</label>
-              <input style={inputStyle} value={form.nombre} onChange={e => set("nombre", e.target.value)} placeholder="Ej: Carlos Muñoz / Limpieza Total SpA" />
-            </div>
-            <div>
-              <label style={labelStyle}>Categoría *</label>
-              <select style={{ ...inputStyle, appearance: "none" }} value={form.categoria} onChange={e => set("categoria", e.target.value)}>
-                <option value="">Seleccionar...</option>
-                {gruposConCats.map(g => (
-                  <optgroup key={g.id} label={`${g.label}`}>
-                    {g.cats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                  </optgroup>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Teléfono / WhatsApp *</label>
-              <input style={inputStyle} value={form.telefono} onChange={e => set("telefono", e.target.value)} placeholder="+56 9 XXXX XXXX" />
-            </div>
-            <div>
-              <label style={labelStyle}>Descripción breve</label>
-              <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
-                value={form.descripcion} onChange={e => set("descripcion", e.target.value)}
-                placeholder="¿Qué hace? ¿Algo que destacar?" />
-            </div>
-            <div>
-              <label style={labelStyle}>¿Lo recomiendas?</label>
-              <div style={{ display: "flex", gap: 10 }}>
-                {[true, false].map(v => (
-                  <button key={String(v)} onClick={() => set("recomienda", v)} style={{
-                    flex: 1, padding: 10,
-                    border: `2px solid ${form.recomienda === v ? (v ? "var(--accent)" : "var(--warn)") : "var(--border)"}`,
-                    background: form.recomienda === v ? (v ? "var(--accent-light)" : "var(--warn-light)") : "var(--surface)",
-                    borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14,
-                    color: form.recomienda === v ? (v ? "var(--accent)" : "var(--warn)") : "var(--text-muted)",
-                  }}>{v ? "👍 Sí" : "👎 No"}</button>
-                ))}
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, padding: "32px" }}>
+        <div style={{ maxWidth: 560, margin: "0 auto" }} className="fade-up">
+          <button onClick={onVolver} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 14, padding: "0 0 20px", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
+            ← Volver
+          </button>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "28px", boxShadow: "var(--shadow)" }}>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 4 }}>{condominio.nombre}</p>
+            <h2 className="serif" style={{ fontSize: 26, marginBottom: 4 }}>Sugerir un servicio</h2>
+            <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 24 }}>La información será revisada antes de publicarse.</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+              <div>
+                <label style={labelStyle}>Nombre o empresa *</label>
+                <input style={inputStyle} value={form.nombre} onChange={e => set("nombre", e.target.value)} placeholder="Ej: Carlos Muñoz / Limpieza Total SpA" />
               </div>
+              <div>
+                <label style={labelStyle}>Categoría *</label>
+                <select style={{ ...inputStyle, appearance: "none" }} value={form.categoria} onChange={e => set("categoria", e.target.value)}>
+                  <option value="">Seleccionar...</option>
+                  {gruposConCats.map(g => (
+                    <optgroup key={g.id} label={g.label}>
+                      {g.cats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Teléfono / WhatsApp *</label>
+                <input style={inputStyle} value={form.telefono} onChange={e => set("telefono", e.target.value)} placeholder="+56 9 XXXX XXXX" />
+              </div>
+              <div>
+                <label style={labelStyle}>Descripción breve</label>
+                <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
+                  value={form.descripcion} onChange={e => set("descripcion", e.target.value)}
+                  placeholder="¿Qué hace? ¿Algo que destacar?" />
+              </div>
+              <div>
+                <label style={labelStyle}>¿Lo recomiendas?</label>
+                <div style={{ display: "flex", gap: 10 }}>
+                  {[true, false].map(v => (
+                    <button key={String(v)} onClick={() => set("recomienda", v)} style={{
+                      flex: 1, padding: 10,
+                      border: `2px solid ${form.recomienda === v ? (v ? "var(--accent)" : "var(--warn)") : "var(--border)"}`,
+                      background: form.recomienda === v ? (v ? "var(--accent-light)" : "var(--warn-light)") : "var(--surface)",
+                      borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14,
+                      color: form.recomienda === v ? (v ? "var(--accent)" : "var(--warn)") : "var(--text-muted)",
+                    }}>{v ? "👍 Sí" : "👎 No"}</button>
+                  ))}
+                </div>
+              </div>
+              <button onClick={handleEnviar} disabled={!valido || enviando} style={{
+                marginTop: 4, background: (!valido || enviando) ? "var(--border)" : "var(--accent)",
+                color: (!valido || enviando) ? "var(--text-muted)" : "#fff",
+                border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600,
+                cursor: (!valido || enviando) ? "not-allowed" : "pointer", fontFamily: "inherit", transition: "all 0.2s",
+              }}>{enviando ? "⟳ Enviando..." : "Enviar sugerencia"}</button>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6, borderTop: "1px solid var(--border)", paddingTop: 12, marginTop: 4 }}>
+                🔒 Los datos serán publicados en el directorio una vez validados. Si eres el proveedor y deseas eliminar tu información, contacta al administrador en <strong>admin.appx@gmail.com</strong>
+              </p>
             </div>
-            <button onClick={handleEnviar} disabled={!valido || enviando} style={{
-              marginTop: 4, background: (!valido || enviando) ? "var(--border)" : "var(--accent)",
-              color: (!valido || enviando) ? "var(--text-muted)" : "#fff",
-              border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600,
-              cursor: (!valido || enviando) ? "not-allowed" : "pointer", fontFamily: "inherit", transition: "all 0.2s",
-            }}>{enviando ? "⟳ Enviando..." : "Enviar propuesta"}</button>
-            <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6, borderTop: "1px solid var(--border)", paddingTop: 12, marginTop: 4 }}>
-              🔒 Los datos serán publicados en el directorio una vez validados. Si eres el proveedor y deseas eliminar tu información, contacta al administrador en <strong>admin.appx@gmail.com</strong>
-            </p>
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };
@@ -711,8 +733,8 @@ const CargaMasiva = ({ condominios, todasCats }) => {
       ["canquen-norte", "Ejemplo Jardín", "jardin", "+56 9 8765 4321", "Podas y mantención", "no"],
     ]);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Proveedores");
-    XLSX.writeFile(wb, "plantilla_proveedores.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "Servicios");
+    XLSX.writeFile(wb, "plantilla_servicios.xlsx");
   };
 
   const handleArchivo = async (e) => {
@@ -757,9 +779,9 @@ const CargaMasiva = ({ condominios, todasCats }) => {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "20px 24px" }}>
-        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>📥 Carga masiva de proveedores</h3>
+        <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>📥 Carga masiva de servicios</h3>
         <p style={{ fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6, marginBottom: 14 }}>
-          Sube un Excel con los proveedores. Quedarán directamente en estado <strong>aprobado</strong>.<br />
+          Sube un Excel con los servicios. Quedarán directamente en estado <strong>aprobado</strong>.<br />
           Columnas: <code style={{ background: "var(--bg)", padding: "1px 6px", borderRadius: 4, fontSize: 12 }}>condominio, nombre, categoria, telefono, descripcion, recomienda</code>
         </p>
         <button onClick={descargarPlantilla} style={{ background: "var(--accent-light)", color: "var(--accent)", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
@@ -807,12 +829,12 @@ const CargaMasiva = ({ condominios, todasCats }) => {
             color: cargando ? "var(--text-muted)" : "#fff", border: "none",
             borderRadius: 10, padding: "11px 24px", fontSize: 14, fontWeight: 600,
             cursor: cargando ? "not-allowed" : "pointer", fontFamily: "inherit",
-          }}>{cargando ? "⟳ Importando..." : `Importar ${preview.length} proveedores`}</button>
+          }}>{cargando ? "⟳ Importando..." : `Importar ${preview.length} servicios`}</button>
         </div>
       )}
       {resultado && (
         <div style={{ background: "var(--accent-light)", border: "1px solid var(--accent)", borderRadius: "var(--radius)", padding: "16px 20px" }}>
-          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)" }}>✅ Se importaron {resultado.ok} proveedores. Ya están visibles en el directorio.</p>
+          <p style={{ fontSize: 14, fontWeight: 600, color: "var(--accent)" }}>✅ Se importaron {resultado.ok} servicios. Ya están visibles en el directorio.</p>
         </div>
       )}
     </div>
@@ -822,15 +844,15 @@ const CargaMasiva = ({ condominios, todasCats }) => {
 // ── Panel Admin ───────────────────────────────────────────────────
 const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondominio, adminToken, onLogout }) => {
   const [condominioActivo, setCondominioActivo] = useState(condominios[0]?.slug || "");
-  const [tab, setTab] = useState("proveedores");
-  const [proveedores, setProveedores] = useState([]);
+  const [tab, setTab] = useState("servicios");
+  const [servicios, setServicios] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState(null);
   const [guardado, setGuardado] = useState(false);
   const [nuevaCat, setNuevaCat] = useState({ label: "", emoji: "🏠", grupo: "hogar" });
   const [catError, setCatError] = useState("");
   const [mostrarEmojis, setMostrarEmojis] = useState(false);
-  const [editandoProveedor, setEditandoProveedor] = useState(null);
+  const [editandoServicio, setEditandoServicio] = useState(null);
 
   const cond = condominios.find(c => c.slug === condominioActivo);
 
@@ -840,7 +862,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
     const cargar = async () => {
       setCargando(true);
       const data = await query("proveedores", { filter: `condominio=eq.${condominioActivo}&order=id.desc` });
-      setProveedores(Array.isArray(data) ? data : []);
+      setServicios(Array.isArray(data) ? data : []);
       setCargando(false);
     };
     if (condominioActivo) cargar();
@@ -848,16 +870,16 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
 
   const handleAprobar = async (id) => {
     await query("proveedores", { update: { where: `id=eq.${id}`, data: { estado: "aprobado" } } });
-    setProveedores(p => p.map(x => x.id === id ? { ...x, estado: "aprobado" } : x));
+    setServicios(p => p.map(x => x.id === id ? { ...x, estado: "aprobado" } : x));
   };
   const handleRechazar = async (id) => {
     await query("proveedores", { remove: `id=eq.${id}` });
-    setProveedores(p => p.filter(x => x.id !== id));
+    setServicios(p => p.filter(x => x.id !== id));
   };
   const handleEditar = async (id, datos) => {
     await query("proveedores", { update: { where: `id=eq.${id}`, data: datos } });
-    setProveedores(p => p.map(x => x.id === id ? { ...x, ...datos } : x));
-    setEditandoProveedor(null);
+    setServicios(p => p.map(x => x.id === id ? { ...x, ...datos } : x));
+    setEditandoServicio(null);
   };
   const handleGuardarCondominio = async () => {
     await query("condominios", { update: { where: `slug=eq.${condominioActivo}`, data: { nombre: editando.nombre, colores: editando.colores, categorias_activas: editando.categorias_activas } } });
@@ -890,8 +912,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
 
   if (!editando) return <Cargando />;
 
-  const pendientes = proveedores.filter(p => p.estado === "pendiente");
-  const aprobados = proveedores.filter(p => p.estado === "aprobado");
+  const pendientes = servicios.filter(p => p.estado === "pendiente");
+  const aprobados = servicios.filter(p => p.estado === "aprobado");
 
   const TabBtn = ({ id, label }) => (
     <button onClick={() => setTab(id)} style={{
@@ -902,7 +924,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
     }}>{label}</button>
   );
 
-  const FilaProveedor = ({ p, esPendiente }) => (
+  const FilaServicio = ({ p, esPendiente }) => (
     <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
       <div style={{ flex: 1 }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
@@ -915,24 +937,24 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
       </div>
       <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
         {esPendiente && <button onClick={() => handleAprobar(p.id)} style={{ background: "var(--accent-light)", color: "var(--accent)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✓ Aprobar</button>}
-        <button onClick={() => setEditandoProveedor({ ...p })} style={{ background: "var(--gold-light)", color: "var(--gold)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✏️ Editar</button>
+        <button onClick={() => setEditandoServicio({ ...p })} style={{ background: "var(--gold-light)", color: "var(--gold)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✏️ Editar</button>
         <button onClick={() => handleRechazar(p.id)} style={{ background: "var(--warn-light)", color: "var(--warn)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{esPendiente ? "✕ Rechazar" : "🗑 Eliminar"}</button>
       </div>
     </div>
   );
 
-  const ModalEditarProveedor = () => {
-    const [form, setForm] = useState({ ...editandoProveedor });
+  const ModalEditarServicio = () => {
+    const [form, setForm] = useState({ ...editandoServicio });
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
     const cats = todasCats.filter(c => cond.categorias_activas.includes(c.id));
     const gruposConCats = GRUPOS.map(g => ({ ...g, cats: cats.filter(c => c.grupo === g.id) })).filter(g => g.cats.length > 0);
     return (
-      <div style={{ position: "fixed", inset: 0, background: "rgba(28,26,22,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}
-        onClick={e => e.target === e.currentTarget && setEditandoProveedor(null)}>
+      <div style={{ position: "fixed", inset: 0, background: "rgba(28,26,22,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, padding: 24 }}
+        onClick={e => e.target === e.currentTarget && setEditandoServicio(null)}>
         <div className="fade-up" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "28px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(28,26,22,0.2)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h3 className="serif" style={{ fontSize: 22 }}>Editar proveedor</h3>
-            <button onClick={() => setEditandoProveedor(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--text-muted)" }}>✕</button>
+            <h3 className="serif" style={{ fontSize: 22 }}>Editar servicio</h3>
+            <button onClick={() => setEditandoServicio(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--text-muted)" }}>✕</button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div><label style={labelStyle}>Nombre o empresa</label><input style={inputStyle} value={form.nombre} onChange={e => set("nombre", e.target.value)} /></div>
@@ -957,7 +979,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
-              <button onClick={() => setEditandoProveedor(null)} style={{ flex: 1, background: "var(--bg)", border: "1.5px solid var(--border)", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "var(--text-muted)" }}>Cancelar</button>
+              <button onClick={() => setEditandoServicio(null)} style={{ flex: 1, background: "var(--bg)", border: "1.5px solid var(--border)", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "var(--text-muted)" }}>Cancelar</button>
               <button onClick={() => handleEditar(form.id, { nombre: form.nombre, categoria: form.categoria, telefono: form.telefono, descripcion: form.descripcion, recomienda: form.recomienda })} style={{ flex: 2, background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Guardar cambios</button>
             </div>
           </div>
@@ -968,8 +990,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
 
   return (
     <>
-      <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "32px 24px" }}>
-        <div style={{ maxWidth: 820, margin: "0 auto" }}>
+      <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "32px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
             <div>
               <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 3 }}>Panel Administrador</p>
@@ -986,8 +1008,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 24 }}>
             {[
               { label: "Pendientes", val: pendientes.length, bg: "var(--gold-light)", color: "var(--gold)" },
-              { label: "Aprobados", val: aprobados.length, bg: "var(--accent-light)", color: "var(--accent)" },
-              { label: "Total", val: proveedores.length, bg: "var(--surface)", color: "var(--text)" },
+              { label: "Aprobados",  val: aprobados.length,  bg: "var(--accent-light)", color: "var(--accent)" },
+              { label: "Total",      val: servicios.length,  bg: "var(--surface)", color: "var(--text)" },
             ].map(s => (
               <div key={s.label} style={{ background: s.bg, borderRadius: "var(--radius)", border: "1px solid var(--border)", padding: "14px 18px" }}>
                 <p style={{ fontSize: 26, fontWeight: 700, color: s.color, fontFamily: "'DM Serif Display', serif" }}>{s.val}</p>
@@ -997,25 +1019,25 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           </div>
 
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 4, display: "inline-flex", gap: 2, marginBottom: 24, flexWrap: "wrap" }}>
-            <TabBtn id="proveedores" label={`📋 Proveedores ${pendientes.length > 0 ? `(${pendientes.length})` : ""}`} />
+            <TabBtn id="servicios" label={`📋 Servicios ${pendientes.length > 0 ? `(${pendientes.length})` : ""}`} />
             <TabBtn id="carga_masiva" label="📥 Carga Masiva" />
             <TabBtn id="configuracion" label="⚙️ Configuración" />
           </div>
 
-          {tab === "proveedores" && (
-            cargando ? <Cargando mensaje="Cargando proveedores..." /> :
+          {tab === "servicios" && (
+            cargando ? <Cargando mensaje="Cargando servicios..." /> :
             <div>
               {pendientes.length > 0 && (
                 <div style={{ marginBottom: 28 }}>
                   <h3 className="serif" style={{ fontSize: 18, marginBottom: 12 }}>⏳ Pendientes <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}>({pendientes.length})</span></h3>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{pendientes.map(p => <FilaProveedor key={p.id} p={p} esPendiente />)}</div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{pendientes.map(p => <FilaServicio key={p.id} p={p} esPendiente />)}</div>
                 </div>
               )}
               <div>
                 <h3 className="serif" style={{ fontSize: 18, marginBottom: 12 }}>✅ Aprobados <span style={{ fontSize: 13, fontWeight: 400, color: "var(--text-muted)" }}>({aprobados.length})</span></h3>
                 {aprobados.length === 0
-                  ? <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Sin proveedores aprobados aún.</p>
-                  : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{aprobados.map(p => <FilaProveedor key={p.id} p={p} esPendiente={false} />)}</div>}
+                  ? <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Sin servicios aprobados aún.</p>
+                  : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{aprobados.map(p => <FilaServicio key={p.id} p={p} esPendiente={false} />)}</div>}
               </div>
             </div>
           )}
@@ -1089,7 +1111,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           )}
         </div>
       </div>
-      {editandoProveedor && <ModalEditarProveedor />}
+      {editandoServicio && <ModalEditarServicio />}
     </>
   );
 };
@@ -1134,12 +1156,15 @@ export default function App() {
   if (!cond) return (
     <>
       <style>{defaultCSS}</style>
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-        <div style={{ textAlign: "center", maxWidth: 380 }}>
-          <p style={{ fontSize: 48 }}>🏠</p>
-          <h2 className="serif" style={{ fontSize: 26, marginTop: 16 }}>Condominio no encontrado</h2>
-          <p style={{ color: "var(--text-muted)", marginTop: 10, lineHeight: 1.6 }}>La URL no corresponde a ningún condominio registrado.</p>
+      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div style={{ textAlign: "center", maxWidth: 380 }}>
+            <p style={{ fontSize: 48 }}>🏠</p>
+            <h2 className="serif" style={{ fontSize: 26, marginTop: 16 }}>Condominio no encontrado</h2>
+            <p style={{ color: "var(--text-muted)", marginTop: 10, lineHeight: 1.6 }}>La URL no corresponde a ningún condominio registrado.</p>
+          </div>
         </div>
+        <Footer />
       </div>
     </>
   );
