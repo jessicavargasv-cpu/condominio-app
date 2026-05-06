@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs";
 import {
   Wrench, Zap, Flame, Scissors, Eye, Leaf, Waves, Bug,
+  PawPrint, Dog, Cat, Bird,
   Car, CircleDot, Gauge, Truck,
   HeartPulse, Baby, User, Users,
   FileText, Monitor, Package, MoreHorizontal,
