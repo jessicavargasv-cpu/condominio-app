@@ -3,7 +3,7 @@ import * as XLSX from "https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs";
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
 const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
-const SUPABASE_KEY = "b_publishable_3mzA7ePIapL8XEhlno1bZQ_jU0sF9h2";
+const SUPABASE_KEY = "sb_publishable_3mzA7ePIapL8XEhlno1bZQ_jU0sF9h2";
 
 // ── API Supabase ──────────────────────────────────────────────────
 const query = async (table, options = {}) => {
