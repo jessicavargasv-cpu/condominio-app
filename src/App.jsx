@@ -11,7 +11,8 @@ import {
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
 const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
-const SUPABASE_KEY = "sb_publishable_3mzA7ePIapL8XEhlno1bZQ_jU0sF9h2"
+const SUPABASE_KEY = "sb_publishable_3mzA7ePIapL8XEhlno1bZQ_jU0sF9h2";
+
 // ── API Supabase ──────────────────────────────────────────────────
 const query = async (table, options = {}) => {
   const { filter, insert, update, remove, select = "*" } = options;
@@ -230,7 +231,7 @@ const ServicioCard = ({ p, todasCats }) => (
 const ComoFunciona = ({ onProponer }) => {
   const pasos = [
     { Icon: Search,      titulo: "Explora los servicios",   desc: "Navega por categorías y encuentra el tipo de servicio que necesitas para tu hogar." },
-    { Icon: Shield,      titulo: "Revisa al proveedor",     desc: "Lee la descripción y la recomendación de tus propios vecinos antes de decidir." },
+    { Icon: Shield,      titulo: "Revisa el servicio",      desc: "Lee la descripción y la recomendación de tus propios vecinos antes de decidir." },
     { Icon: Phone,       titulo: "Contáctalo en 1 clic",    desc: "Escríbele directo por WhatsApp o llámalo al instante. Sin intermediarios." },
     { Icon: PlusCircle,  titulo: "Sugiere un servicio",     desc: "¿Conoces uno bueno? Compártelo con tu comunidad y ayuda a tus vecinos." },
   ];
@@ -313,29 +314,16 @@ const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCate
   const toggleGrupo = (id) => setGrupoAbierto(prev => prev === id ? null : id);
 
   return (
-    <div ref={navRef} style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 30 }}>
+    <div ref={navRef} style={{ background: "var(--surface)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 30, overflow: "visible" }}>
 
-      {/* Fila 1: nombre prominente + botón */}
-      <div style={{ padding: "16px 32px 10px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 3 }}>Directorio de Servicios</p>
-          <h1 className="serif" style={{ fontSize: 30, lineHeight: 1.1, fontWeight: 400 }}>{condominio.nombre}</h1>
-        </div>
-        <button onClick={onProponer} style={{
-          background: "var(--accent)", color: "#fff", border: "none",
-          borderRadius: 9, padding: "9px 18px", fontSize: 13, fontWeight: 600,
-          cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center",
-          gap: 6, transition: "opacity 0.2s", whiteSpace: "nowrap", flexShrink: 0, marginTop: 4,
-        }}
-          onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-          onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-        >
-          + Sugerir servicio
-        </button>
+      {/* Fila 1: nombre */}
+      <div style={{ padding: "16px 32px 10px" }}>
+        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 3 }}>Directorio de Servicios</p>
+        <h1 className="serif" style={{ fontSize: 30, lineHeight: 1.1, fontWeight: 400 }}>{condominio.nombre}</h1>
       </div>
 
-      {/* Fila 2: buscador con X */}
-      <div style={{ padding: "0 32px 12px", position: "relative" }}>
+      {/* Fila 2: buscador con X — ancho limitado */}
+      <div style={{ padding: "0 32px 12px", position: "relative", maxWidth: 600 }}>
         <Search size={15} color="var(--text-muted)" style={{ position: "absolute", left: 44, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
         <input
           placeholder="Buscar servicios por nombre o descripción..."
@@ -345,7 +333,7 @@ const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCate
         />
         {busqueda && (
           <button onClick={() => onBusqueda("")} style={{
-            position: "absolute", right: 44, top: "50%", transform: "translateY(-50%)",
+            position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
             background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)",
             display: "flex", alignItems: "center", padding: 4, borderRadius: "50%",
             fontSize: 16, lineHeight: 1,
@@ -353,9 +341,9 @@ const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCate
         )}
       </div>
 
-      {/* Fila 3: tabs de grupos con dropdown por clic */}
-      <div style={{ padding: "0 32px", overflowX: "auto", borderTop: "1px solid var(--border)" }}>
-        <div style={{ display: "flex", gap: 0 }}>
+      {/* Fila 3: tabs de grupos con dropdown por clic — overflow:visible para dropdowns */}
+      <div style={{ padding: "0 32px", borderTop: "1px solid var(--border)", overflowX: "auto", overflowY: "visible" }}>
+        <div style={{ display: "flex", gap: 0, position: "relative" }}>
 
           {/* Tab Inicio */}
           <button
@@ -393,15 +381,15 @@ const NavTabs = ({ grupos, todasCats, categoriasActivas, filtroGrupo, filtroCate
                   <ChevronDown size={11} strokeWidth={2.5} style={{ transition: "transform 0.2s", transform: abierto ? "rotate(180deg)" : "rotate(0deg)" }} />
                 </button>
 
-                {/* Dropdown */}
+                {/* Dropdown — position absolute, z-index alto, sin quedar atrapado */}
                 {abierto && (
                   <div className="fade-in" style={{
-                    position: "absolute", top: "calc(100% + 1px)", left: 0, zIndex: 200,
+                    position: "absolute", top: "100%", left: 0, zIndex: 500,
                     background: "var(--surface)", border: "1px solid var(--border)",
                     borderRadius: 12, boxShadow: "var(--shadow-md)",
                     padding: "8px", minWidth: 210,
+                    marginTop: 2,
                   }}>
-                    {/* Ver todo el grupo */}
                     <button
                       onClick={() => { onFiltroGrupo(grupo.id); onFiltroCategoria(null); setGrupoAbierto(null); }}
                       style={{
