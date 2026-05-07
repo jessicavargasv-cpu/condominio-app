@@ -370,22 +370,40 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
       <nav style={{
         background: "var(--surface)", borderBottom: "1px solid var(--border)",
         position: "sticky", top: 0, zIndex: 100,
-        padding: "0 32px", display: "flex", alignItems: "center", gap: 32, height: 56,
+        padding: "0 32px", display: "flex", alignItems: "center", gap: 0, height: 56,
       }}>
-        {/* Logo 1dato */}
+        {/* Logo 1dato — ícono chat + texto */}
         <button onClick={() => onNavegar("inicio")} style={{
           background: "none", border: "none", cursor: "pointer", padding: 0,
-          display: "flex", alignItems: "center", gap: 6, flexShrink: 0,
+          display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginRight: 12,
         }}>
-          <span style={{
-            background: "var(--accent)", color: "#fff", borderRadius: 8,
-            padding: "3px 8px", fontSize: 15, fontWeight: 700, letterSpacing: "-0.5px",
-            fontFamily: "'DM Sans', sans-serif",
-          }}>1dato</span>
+          {/* Ícono chat SVG */}
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <rect width="28" height="28" rx="7" fill="var(--accent)"/>
+            <circle cx="9" cy="14" r="2.2" fill="white"/>
+            <circle cx="14" cy="14" r="2.2" fill="white"/>
+            <circle cx="19" cy="14" r="2.2" fill="white"/>
+            <path d="M6 19 L6 22 L10 19" fill="var(--accent)"/>
+          </svg>
+          <span style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+            <span style={{ fontSize: 17, fontWeight: 700, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.5px" }}>1</span>
+            <span style={{ fontSize: 17, fontWeight: 300, color: "var(--text)", fontFamily: "'DM Sans', sans-serif" }}>dato</span>
+          </span>
         </button>
 
+        {/* Separador 1 */}
+        <div style={{ width: 1, height: 28, background: "var(--border)", margin: "0 16px", flexShrink: 0 }} />
+
+        {/* Nombre condominio */}
+        <span style={{ fontSize: 13, fontWeight: 600, color: "#1A3F2F", whiteSpace: "nowrap", marginRight: 20, flexShrink: 0 }}>
+          {condominio.nombre}
+        </span>
+
+        {/* Separador 2 */}
+        <div style={{ width: 1, height: 28, background: "var(--border)", marginRight: 20, flexShrink: 0 }} />
+
         {/* Links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 24, flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 22, flex: 1 }}>
           <NavLink id="servicios" label="Servicios" />
           <NavLink id="como_funciona" label="¿Cómo funciona?" />
           <button onClick={onProponer} style={{
@@ -435,26 +453,30 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
 // ── Hero ──────────────────────────────────────────────────────────
 const Hero = ({ condominio, onNavegar }) => (
   <div style={{
-    background: `linear-gradient(135deg, var(--accent) 0%, var(--accent)dd 60%, var(--accent)99 100%)`,
-    padding: "72px 32px 80px", textAlign: "center", color: "#fff",
+    background: "linear-gradient(135deg, #ffffff 0%, #e8f5ee 60%, #c8e8d8 100%)",
+    padding: "80px 32px 88px", textAlign: "center", position: "relative", overflow: "hidden",
   }}>
-    <div className="fade-up">
-      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", opacity: 0.8, marginBottom: 12 }}>
+    {/* Manchas aurora suaves */}
+    <div style={{ position: "absolute", top: -60, right: -80, width: 400, height: 300, borderRadius: "50%", background: "var(--accent)", opacity: 0.06, pointerEvents: "none" }} />
+    <div style={{ position: "absolute", bottom: -40, left: -60, width: 300, height: 220, borderRadius: "50%", background: "var(--accent)", opacity: 0.05, pointerEvents: "none" }} />
+
+    <div className="fade-up" style={{ position: "relative", zIndex: 1 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 12 }}>
         {condominio.nombre}
       </p>
-      <h1 className="serif" style={{ fontSize: 48, lineHeight: 1.15, marginBottom: 16, color: "#fff" }}>
-        ¿Algún dato de un<br />buen servicio?
+      <h1 className="serif" style={{ fontSize: 48, lineHeight: 1.15, marginBottom: 16, color: "#1A3F2F" }}>
+        Cuando un vecino tiene<br />el dato, todos ganan
       </h1>
-      <p style={{ fontSize: 16, opacity: 0.85, lineHeight: 1.65, maxWidth: 440, margin: "0 auto 32px" }}>
-        El directorio de servicios verificados por tus propios vecinos. Simple, confiable y sin publicidad.
+      <p style={{ fontSize: 16, color: "#4A7C6F", lineHeight: 1.65, maxWidth: 460, margin: "0 auto 32px" }}>
+        El directorio de servicios que recomiendan tus propios vecinos.
       </p>
       <button onClick={() => onNavegar("servicios")} style={{
-        background: "#fff", color: "var(--accent)", border: "none",
+        background: "var(--accent)", color: "#fff", border: "none",
         borderRadius: 10, padding: "13px 28px", fontSize: 14, fontWeight: 700,
         cursor: "pointer", fontFamily: "inherit", display: "inline-flex",
         alignItems: "center", gap: 8, transition: "opacity 0.2s",
       }}
-        onMouseEnter={e => e.currentTarget.style.opacity = "0.9"}
+        onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
         onMouseLeave={e => e.currentTarget.style.opacity = "1"}
       >
         Ver servicios <ArrowRight size={15} strokeWidth={2.5} />
@@ -738,9 +760,15 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
   const [form, setForm] = useState({ nombre: "", categoria: "", telefono: "", descripcion: "", recomienda: true });
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  const [serviciosCount, setServiciosCount] = useState(0);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const cats = todasCats.filter(c => condominio.categorias_activas.includes(c.id));
   const valido = form.nombre && form.categoria && form.telefono;
+
+  useEffect(() => {
+    query("proveedores", { filter: `condominio=eq.${condominio.slug}&estado=eq.aprobado`, select: "id" })
+      .then(data => setServiciosCount(Array.isArray(data) ? data.length : 0));
+  }, [condominio.slug]);
 
   const handleEnviar = async () => {
     if (!valido) return;
@@ -776,14 +804,66 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
-      <div style={{ flex: 1, padding: "32px" }}>
-        <div style={{ maxWidth: 560, margin: "0 auto" }} className="fade-up">
-          <button onClick={onVolver} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 14, padding: "0 0 20px", fontFamily: "inherit" }}>← Volver</button>
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "28px", boxShadow: "var(--shadow)" }}>
+      <div style={{ flex: 1, padding: "40px 32px" }}>
+        <button onClick={onVolver} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 14, padding: "0 0 24px", fontFamily: "inherit" }}>← Volver</button>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 24, maxWidth: 900, margin: "0 auto", alignItems: "start" }}>
+
+          {/* Columna izquierda — motivacional */}
+          <div style={{
+            background: "linear-gradient(135deg, #ffffff 0%, #e8f5ee 60%, #c8e8d8 100%)",
+            border: "1px solid #D4EAE0", borderRadius: "var(--radius)", padding: "36px 32px",
+            position: "relative", overflow: "hidden",
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 160, borderRadius: "50%", background: "var(--accent)", opacity: 0.07, pointerEvents: "none" }} />
+            <div style={{ position: "absolute", bottom: -30, left: -30, width: 160, height: 120, borderRadius: "50%", background: "var(--accent)", opacity: 0.05, pointerEvents: "none" }} />
+
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 12 }}>Comparte tu dato</p>
+              <h2 className="serif" style={{ fontSize: 26, lineHeight: 1.25, color: "#1A3F2F", marginBottom: 12 }}>
+                Tu dato vale oro<br />para tus vecinos
+              </h2>
+              <p style={{ fontSize: 13, color: "#4A7C6F", lineHeight: 1.65, marginBottom: 24 }}>
+                ¿Conoces un buen gasfíter, jardinero o electricista? Compártelo con tu comunidad.
+              </p>
+
+              <div style={{ borderTop: "1px solid #D4EAE0", paddingTop: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+                {[
+                  { icon: "✓", titulo: "Verificado por el admin", desc: "Antes de publicarse en el directorio" },
+                  { icon: "👥", titulo: "Visible para tu comunidad", desc: "Todos los vecinos podrán verlo" },
+                  { icon: "💡", titulo: "Ayuda a quien lo necesita", desc: "Tu dato puede hacer la diferencia" },
+                ].map((b, i) => (
+                  <div key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 8, background: "var(--accent-light)", border: "1px solid #B8DDC8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 }}>
+                      {b.icon}
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: "#1A3F2F", marginBottom: 2 }}>{b.titulo}</p>
+                      <p style={{ fontSize: 11, color: "#4A7C6F" }}>{b.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ borderTop: "1px solid #D4EAE0", paddingTop: 20, marginTop: 20 }}>
+                <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", marginBottom: 8 }}>Servicios en {condominio.nombre}</p>
+                <p style={{ fontSize: 40, fontWeight: 700, color: "var(--accent)", fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{serviciosCount}</p>
+                <p style={{ fontSize: 12, color: "#4A7C6F", marginTop: 4 }}>servicios verificados por vecinos</p>
+              </div>
+
+              <div style={{ background: "var(--accent-light)", border: "1px solid #B8DDC8", borderRadius: 10, padding: "14px 16px", marginTop: 20 }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: "#1A3F2F", marginBottom: 4 }}>¿Ya usaste 1dato?</p>
+                <p style={{ fontSize: 11, color: "#4A7C6F", lineHeight: 1.6 }}>Pronto podrás dejar tu opinión sobre los servicios del directorio.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Columna derecha — formulario */}
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "32px", boxShadow: "var(--shadow)" }}>
             <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 4 }}>{condominio.nombre}</p>
-            <h2 className="serif" style={{ fontSize: 26, marginBottom: 4 }}>Sugerir un servicio</h2>
+            <h2 className="serif" style={{ fontSize: 24, marginBottom: 4 }}>Sugerir un servicio</h2>
             <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 24 }}>La información será revisada antes de publicarse.</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div><label style={labelStyle}>Nombre o empresa *</label><input style={inputStyle} value={form.nombre} onChange={e => set("nombre", e.target.value)} placeholder="Ej: Carlos Muñoz / Limpieza Total SpA" /></div>
               <div>
                 <label style={labelStyle}>Categoría *</label>
@@ -797,7 +877,16 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
                 </select>
               </div>
               <div><label style={labelStyle}>Teléfono / WhatsApp *</label><input style={inputStyle} value={form.telefono} onChange={e => set("telefono", e.target.value)} placeholder="+56 9 XXXX XXXX" /></div>
-              <div><label style={labelStyle}>Descripción breve</label><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }} value={form.descripcion} onChange={e => set("descripcion", e.target.value)} placeholder="¿Qué hace? ¿Algo que destacar?" /></div>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <label style={{ ...labelStyle, marginBottom: 0 }}>Descripción breve</label>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{form.descripcion.length} / 200</span>
+                </div>
+                <textarea style={{ ...inputStyle, resize: "vertical", minHeight: 80 }}
+                  value={form.descripcion}
+                  onChange={e => set("descripcion", e.target.value.slice(0, 200))}
+                  placeholder="¿Qué hace? ¿Algo que destacar?" />
+              </div>
               <div>
                 <label style={labelStyle}>¿Lo recomiendas?</label>
                 <div style={{ display: "flex", gap: 10 }}>
@@ -809,7 +898,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
               <button onClick={handleEnviar} disabled={!valido || enviando} style={{ marginTop: 4, background: (!valido || enviando) ? "var(--border)" : "var(--accent)", color: (!valido || enviando) ? "var(--text-muted)" : "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600, cursor: (!valido || enviando) ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
                 {enviando ? "⟳ Enviando..." : "Enviar sugerencia"}
               </button>
-              <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6, borderTop: "1px solid var(--border)", paddingTop: 12, marginTop: 4 }}>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
                 🔒 Los datos serán publicados una vez validados. Para eliminar tu información escribe a <strong>{ADMIN_EMAIL}</strong>
               </p>
             </div>
