@@ -201,8 +201,15 @@ const Badge = ({ categoriaId, todasCats }) => {
   );
 };
 
+// ── Registrar evento ─────────────────────────────────────────────
+const registrarEvento = async (proveedorId, condominio, tipo) => {
+  try {
+    await query("eventos", { insert: { proveedor_id: proveedorId, condominio, tipo } });
+  } catch (e) { /* silencioso */ }
+};
+
 // ── Tarjeta servicio ──────────────────────────────────────────────
-const ServicioCard = ({ p, todasCats }) => (
+const ServicioCard = ({ p, todasCats, condominio }) => (
   <div className="fade-up" style={{
     background: "var(--surface)", border: "1px solid var(--border)",
     borderRadius: "var(--radius)", padding: "18px 20px",
@@ -215,9 +222,14 @@ const ServicioCard = ({ p, todasCats }) => (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
       <div>
         <p style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</p>
-        <p style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+        <a href={`tel:${p.telefono.replace(/\s/g, "")}`}
+          onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
+          style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2, display: "flex", alignItems: "center", gap: 4, textDecoration: "none" }}
+          onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+          onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+        >
           <Phone size={10} strokeWidth={2} /> {p.telefono}
-        </p>
+        </a>
       </div>
       <Badge categoriaId={p.categoria} todasCats={todasCats} />
     </div>
@@ -578,8 +590,13 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
   const catsDelGrupo = grupoActualObj?.cats || [];
 
   const toggleAcordeon = (catId) => {
+    const abriendo = !acordeonesAbiertos[catId];
     setAcordeonesAbiertos(prev => ({ ...prev, [catId]: !prev[catId] }));
     setCatActiva(catId);
+    if (abriendo) {
+      const serviciosCat = serviciosAprobados.filter(s => s.categoria === catId);
+      serviciosCat.forEach(s => registrarEvento(s.id, condominio.slug, "vista"));
+    }
   };
 
   return (
@@ -676,7 +693,7 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
                             <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "12px 0" }}>Sin servicios en esta categoría aún.</p>
                           ) : (
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-                              {serviciosCat.map(p => <ServicioCard key={p.id} p={p} todasCats={todasCats} />)}
+                              {serviciosCat.map(p => <ServicioCard key={p.id} p={p} todasCats={todasCats} condominio={condominio} />)}
                             </div>
                           )}
                         </div>
@@ -1033,7 +1050,7 @@ const CargaMasiva = ({ condominios, todasCats }) => {
 // ── Panel Admin ───────────────────────────────────────────────────
 const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondominio, onLogout }) => {
   const [condominioActivo, setCondominioActivo] = useState(condominios[0]?.slug || "");
-  const [tab, setTab] = useState("servicios");
+  const [seccion, setSeccion] = useState("dashboard");
   const [servicios, setServicios] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState(null);
@@ -1042,11 +1059,23 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const [catError, setCatError] = useState("");
   const [mostrarEmojis, setMostrarEmojis] = useState(false);
   const [editandoServicio, setEditandoServicio] = useState(null);
+  const [eventos, setEventos] = useState([]);
 
   const cond = condominios.find(c => c.slug === condominioActivo);
+
   useEffect(() => { if (cond) setEditando({ ...cond, colores: { ...cond.colores } }); }, [condominioActivo, condominios]);
+
   useEffect(() => {
-    const cargar = async () => { setCargando(true); const data = await query("proveedores", { filter: `condominio=eq.${condominioActivo}&order=id.desc` }); setServicios(Array.isArray(data) ? data : []); setCargando(false); };
+    const cargar = async () => {
+      setCargando(true);
+      const [svcs, evs] = await Promise.all([
+        query("proveedores", { filter: `condominio=eq.${condominioActivo}&order=id.desc` }),
+        query("eventos", { filter: `condominio=eq.${condominioActivo}` }),
+      ]);
+      setServicios(Array.isArray(svcs) ? svcs : []);
+      setEventos(Array.isArray(evs) ? evs : []);
+      setCargando(false);
+    };
     if (condominioActivo) cargar();
   }, [condominioActivo]);
 
@@ -1073,28 +1102,83 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const handleEliminarCategoria = async (id) => { await query("categorias_custom", { remove: `id=eq.${id}` }); setTodasCats(prev => prev.filter(c => c.id !== id)); setEditando(prev => ({ ...prev, categorias_activas: prev.categorias_activas.filter(c => c !== id) })); };
 
   if (!editando) return <Cargando />;
+
   const pendientes = servicios.filter(p => p.estado === "pendiente");
   const aprobados = servicios.filter(p => p.estado === "aprobado");
+  const catsActivas = todasCats.filter(c => cond?.categorias_activas.includes(c.id));
 
-  const TabBtn = ({ id, label }) => (
-    <button onClick={() => setTab(id)} style={{ background: tab === id ? "var(--accent)" : "transparent", color: tab === id ? "#fff" : "var(--text-muted)", border: "none", borderRadius: 8, padding: "8px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s" }}>{label}</button>
+  // Estadísticas de eventos
+  const hace7dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const eventosRecientes = eventos.filter(e => e.created_at >= hace7dias);
+  const vistas = eventos.filter(e => e.tipo === "vista");
+  const contactos = eventos.filter(e => e.tipo === "contacto");
+  const tasaContacto = vistas.length > 0 ? Math.round((contactos.length / vistas.length) * 100) : 0;
+
+  const contarPorProveedor = (evs) => {
+    const counts = {};
+    evs.forEach(e => { counts[e.proveedor_id] = (counts[e.proveedor_id] || 0) + 1; });
+    return counts;
+  };
+  const vistasPorProv = contarPorProveedor(vistas);
+  const contactosPorProv = contarPorProveedor(contactos);
+  const masVisto = Object.entries(vistasPorProv).sort((a, b) => b[1] - a[1])[0];
+  const masContactado = Object.entries(contactosPorProv).sort((a, b) => b[1] - a[1])[0];
+  const masVistoSvc = masVisto ? servicios.find(s => s.id === parseInt(masVisto[0])) : null;
+  const masContactadoSvc = masContactado ? servicios.find(s => s.id === parseInt(masContactado[0])) : null;
+  const sinVistas = aprobados.filter(s => !vistasPorProv[s.id]);
+
+  // Servicios por categoría
+  const porCategoria = catsActivas.map(cat => ({
+    ...cat,
+    total: aprobados.filter(s => s.categoria === cat.id).length,
+  })).filter(c => c.total > 0).sort((a, b) => b.total - a.total).slice(0, 6);
+  const maxCat = Math.max(...porCategoria.map(c => c.total), 1);
+
+  // Actividad últimos 7 días
+  const dias = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().split("T")[0];
+  });
+  const actividadDiaria = dias.map(dia => ({
+    dia: dia.slice(5),
+    vistas: eventos.filter(e => e.tipo === "vista" && e.created_at?.startsWith(dia)).length,
+    contactos: eventos.filter(e => e.tipo === "contacto" && e.created_at?.startsWith(dia)).length,
+  }));
+  const maxActividad = Math.max(...actividadDiaria.map(d => d.vistas + d.contactos), 1);
+
+  const SideLink = ({ id, icon, label, badge }) => (
+    <button onClick={() => setSeccion(id)} style={{
+      width: "100%", textAlign: "left", background: seccion === id ? "#D8EFE4" : "transparent",
+      border: "none", borderLeft: `3px solid ${seccion === id ? "#2D6A4F" : "transparent"}`,
+      padding: "10px 16px", cursor: "pointer", fontFamily: "inherit",
+      display: "flex", alignItems: "center", gap: 10, transition: "all 0.15s",
+      color: seccion === id ? "#1A3F2F" : "#7A7570", fontSize: 13, fontWeight: seccion === id ? 600 : 400,
+    }}
+      onMouseEnter={e => { if (seccion !== id) e.currentTarget.style.background = "#f0f8f4"; }}
+      onMouseLeave={e => { if (seccion !== id) e.currentTarget.style.background = "transparent"; }}
+    >
+      <span style={{ fontSize: 15 }}>{icon}</span>
+      <span style={{ flex: 1 }}>{label}</span>
+      {badge > 0 && <span style={{ background: "#FDF3DC", color: "#8B6914", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 999 }}>{badge}</span>}
+    </button>
   );
 
   const FilaServicio = ({ p, esPendiente }) => (
-    <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+    <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 12, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
       <div style={{ flex: 1 }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
-          <span style={{ fontWeight: 600 }}>{p.nombre}</span>
+          <span style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</span>
           <Badge categoriaId={p.categoria} todasCats={todasCats} />
-          <span style={{ fontSize: 12, color: p.recomienda ? "var(--accent)" : "var(--warn)", fontWeight: 600 }}>{p.recomienda ? "👍" : "👎"}</span>
+          <span style={{ fontSize: 12, color: p.recomienda ? "#2D6A4F" : "#C0392B", fontWeight: 600 }}>{p.recomienda ? "👍" : "👎"}</span>
         </div>
-        <p style={{ fontSize: 13, color: "var(--text-muted)" }}>📞 {p.telefono}</p>
-        {p.descripcion && <p style={{ fontSize: 13, marginTop: 4 }}>{p.descripcion}</p>}
+        <p style={{ fontSize: 12, color: "#7A7570" }}>📞 {p.telefono}</p>
+        {p.descripcion && <p style={{ fontSize: 12, marginTop: 4, color: "#4A4540" }}>{p.descripcion}</p>}
       </div>
       <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-        {esPendiente && <button onClick={() => handleAprobar(p.id)} style={{ background: "var(--accent-light)", color: "var(--accent)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✓ Aprobar</button>}
-        <button onClick={() => setEditandoServicio({ ...p })} style={{ background: "var(--gold-light)", color: "var(--gold)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✏️ Editar</button>
-        <button onClick={() => handleRechazar(p.id)} style={{ background: "var(--warn-light)", color: "var(--warn)", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{esPendiente ? "✕ Rechazar" : "🗑 Eliminar"}</button>
+        {esPendiente && <button onClick={() => handleAprobar(p.id)} style={{ background: "#D8EFE4", color: "#2D6A4F", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✓ Aprobar</button>}
+        <button onClick={() => setEditandoServicio({ ...p })} style={{ background: "#FDF3DC", color: "#8B6914", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✏️ Editar</button>
+        <button onClick={() => handleRechazar(p.id)} style={{ background: "#FDECEA", color: "#C0392B", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{esPendiente ? "✕ Rechazar" : "🗑 Eliminar"}</button>
       </div>
     </div>
   );
@@ -1106,10 +1190,10 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
     const gruposConCats = GRUPOS.map(g => ({ ...g, cats: cats.filter(c => c.grupo === g.id) })).filter(g => g.cats.length > 0);
     return (
       <div style={{ position: "fixed", inset: 0, background: "rgba(28,26,22,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, padding: 24 }} onClick={e => e.target === e.currentTarget && setEditandoServicio(null)}>
-        <div className="fade-up" style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "28px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(28,26,22,0.2)" }}>
+        <div className="fade-up" style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 16, padding: "28px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(28,26,22,0.2)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-            <h3 className="serif" style={{ fontSize: 22 }}>Editar servicio</h3>
-            <button onClick={() => setEditandoServicio(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "var(--text-muted)" }}>✕</button>
+            <h3 className="serif" style={{ fontSize: 22, color: "#1A3F2F" }}>Editar servicio</h3>
+            <button onClick={() => setEditandoServicio(null)} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#7A7570" }}>✕</button>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div><label style={labelStyle}>Nombre</label><input style={inputStyle} value={form.nombre} onChange={e => set("nombre", e.target.value)} /></div>
@@ -1122,12 +1206,12 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
             <div><label style={labelStyle}>Descripción</label><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 70 }} value={form.descripcion || ""} onChange={e => set("descripcion", e.target.value)} /></div>
             <div><label style={labelStyle}>¿Lo recomiendas?</label>
               <div style={{ display: "flex", gap: 10 }}>
-                {[true, false].map(v => <button key={String(v)} onClick={() => set("recomienda", v)} style={{ flex: 1, padding: 10, border: `2px solid ${form.recomienda === v ? (v ? "var(--accent)" : "var(--warn)") : "var(--border)"}`, background: form.recomienda === v ? (v ? "var(--accent-light)" : "var(--warn-light)") : "var(--surface)", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, color: form.recomienda === v ? (v ? "var(--accent)" : "var(--warn)") : "var(--text-muted)" }}>{v ? "👍 Sí" : "👎 No"}</button>)}
+                {[true, false].map(v => <button key={String(v)} onClick={() => set("recomienda", v)} style={{ flex: 1, padding: 10, border: `2px solid ${form.recomienda === v ? (v ? "#2D6A4F" : "#C0392B") : "#E2DDD4"}`, background: form.recomienda === v ? (v ? "#D8EFE4" : "#FDECEA") : "white", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, color: form.recomienda === v ? (v ? "#2D6A4F" : "#C0392B") : "#7A7570" }}>{v ? "👍 Sí" : "👎 No"}</button>)}
               </div>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setEditandoServicio(null)} style={{ flex: 1, background: "var(--bg)", border: "1.5px solid var(--border)", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "var(--text-muted)" }}>Cancelar</button>
-              <button onClick={() => handleEditar(form.id, { nombre: form.nombre, categoria: form.categoria, telefono: form.telefono, descripcion: form.descripcion, recomienda: form.recomienda })} style={{ flex: 2, background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Guardar</button>
+              <button onClick={() => setEditandoServicio(null)} style={{ flex: 1, background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#7A7570" }}>Cancelar</button>
+              <button onClick={() => handleEditar(form.id, { nombre: form.nombre, categoria: form.categoria, telefono: form.telefono, descripcion: form.descripcion, recomienda: form.recomienda })} style={{ flex: 2, background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Guardar</button>
             </div>
           </div>
         </div>
@@ -1137,101 +1221,263 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
 
   return (
     <>
-      <div style={{ minHeight: "100vh", background: "var(--bg)", padding: "32px" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-            <div>
-              <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 3 }}>Panel Administrador · 1dato</p>
-              <h1 className="serif" style={{ fontSize: 26 }}>{cond?.nombre}</h1>
+      <div style={{ minHeight: "100vh", background: "#F5F2EC", display: "flex" }}>
+
+        {/* Sidebar */}
+        <div style={{ width: 220, flexShrink: 0, background: "#e8f5ee", borderRight: "1px solid #D4EAE0", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
+          {/* Logo */}
+          <div style={{ padding: "20px 16px 16px", borderBottom: "1px solid #D4EAE0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 12 }}>
+              <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+                <rect width="28" height="28" rx="7" fill="#2D6A4F"/>
+                <circle cx="9" cy="14" r="2.2" fill="white"/>
+                <circle cx="14" cy="14" r="2.2" fill="white"/>
+                <circle cx="19" cy="14" r="2.2" fill="white"/>
+                <path d="M6 19 L6 22 L10 19" fill="#2D6A4F"/>
+              </svg>
+              <span style={{ fontSize: 16, fontWeight: 700, color: "#2D6A4F" }}>1</span>
+              <span style={{ fontSize: 16, fontWeight: 300, color: "#1C1A16", marginLeft: -4 }}>dato</span>
             </div>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <select value={condominioActivo} onChange={e => setCondominioActivo(e.target.value)} style={{ ...inputStyle, width: "auto", fontSize: 13, fontWeight: 600 }}>
-                {condominios.map(c => <option key={c.slug} value={c.slug}>{c.nombre}</option>)}
-              </select>
-              <button onClick={onLogout} style={{ background: "var(--warn-light)", color: "var(--warn)", border: "none", borderRadius: 10, padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cerrar sesión</button>
-            </div>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", marginBottom: 4 }}>Panel Admin</p>
+            <select value={condominioActivo} onChange={e => setCondominioActivo(e.target.value)}
+              style={{ width: "100%", fontSize: 12, fontWeight: 600, color: "#1A3F2F", background: "transparent", border: "none", outline: "none", cursor: "pointer", fontFamily: "inherit" }}>
+              {condominios.map(c => <option key={c.slug} value={c.slug}>{c.nombre}</option>)}
+            </select>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 12, marginBottom: 24 }}>
-            {[{ label: "Pendientes", val: pendientes.length, bg: "var(--gold-light)", color: "var(--gold)" }, { label: "Aprobados", val: aprobados.length, bg: "var(--accent-light)", color: "var(--accent)" }, { label: "Total", val: servicios.length, bg: "var(--surface)", color: "var(--text)" }].map(s => (
-              <div key={s.label} style={{ background: s.bg, borderRadius: "var(--radius)", border: "1px solid var(--border)", padding: "14px 18px" }}>
-                <p style={{ fontSize: 26, fontWeight: 700, color: s.color, fontFamily: "'DM Serif Display', serif" }}>{s.val}</p>
-                <p style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 2 }}>{s.label}</p>
-              </div>
-            ))}
+          {/* Nav */}
+          <div style={{ flex: 1, padding: "12px 0" }}>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", padding: "0 16px 8px" }}>Menú</p>
+            <SideLink id="dashboard" icon="📊" label="Dashboard" />
+            <SideLink id="servicios" icon="📋" label="Servicios" badge={pendientes.length} />
+            <SideLink id="carga_masiva" icon="📥" label="Carga Masiva" />
+            <SideLink id="configuracion" icon="⚙️" label="Configuración" />
           </div>
 
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: 4, display: "inline-flex", gap: 2, marginBottom: 24, flexWrap: "wrap" }}>
-            <TabBtn id="servicios" label={`📋 Servicios ${pendientes.length > 0 ? `(${pendientes.length})` : ""}`} />
-            <TabBtn id="carga_masiva" label="📥 Carga Masiva" />
-            <TabBtn id="configuracion" label="⚙️ Configuración" />
+          {/* Logout */}
+          <div style={{ padding: "12px 16px", borderTop: "1px solid #D4EAE0" }}>
+            <button onClick={onLogout} style={{ width: "100%", background: "#FDECEA", color: "#C0392B", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cerrar sesión</button>
           </div>
+        </div>
 
-          {tab === "servicios" && (cargando ? <Cargando /> : (
-            <div>
-              {pendientes.length > 0 && <div style={{ marginBottom: 28 }}><h3 className="serif" style={{ fontSize: 18, marginBottom: 12 }}>⏳ Pendientes ({pendientes.length})</h3><div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{pendientes.map(p => <FilaServicio key={p.id} p={p} esPendiente />)}</div></div>}
-              <div><h3 className="serif" style={{ fontSize: 18, marginBottom: 12 }}>✅ Aprobados ({aprobados.length})</h3>
-                {aprobados.length === 0 ? <p style={{ color: "var(--text-muted)", fontSize: 14 }}>Sin servicios aprobados aún.</p> : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{aprobados.map(p => <FilaServicio key={p.id} p={p} esPendiente={false} />)}</div>}
-              </div>
-            </div>
-          ))}
+        {/* Contenido */}
+        <div style={{ flex: 1, padding: "28px 32px", overflowY: "auto" }}>
 
-          {tab === "carga_masiva" && <CargaMasiva condominios={condominios} todasCats={todasCats} />}
+          {/* ── DASHBOARD ── */}
+          {seccion === "dashboard" && (
+            <div className="fade-up">
+              <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 4 }}>Dashboard</h1>
+              <p style={{ fontSize: 13, color: "#7A7570", marginBottom: 24 }}>{cond?.nombre} · {new Date().toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}</p>
 
-          {tab === "configuracion" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "22px 24px" }}>
-                <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 14 }}>🏠 Nombre del condominio</h3>
-                <input style={inputStyle} value={editando.nombre} onChange={e => setEditando(p => ({ ...p, nombre: e.target.value }))} />
-              </div>
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "22px 24px" }}>
-                <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>🎨 Paleta de colores</h3>
-                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>El color se aplica en toda la vista pública incluyendo el hero.</p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: 10 }}>
-                  {PALETAS.map(p => { const sel = editando.colores.accent === p.accent; return (
-                    <button key={p.nombre} onClick={() => setEditando(prev => ({ ...prev, colores: { accent: p.accent, accentLight: p.accentLight, bg: p.bg, surface: p.surface, border: p.border } }))}
-                      style={{ border: `2px solid ${sel ? p.accent : "var(--border)"}`, borderRadius: 12, padding: "12px 10px", cursor: "pointer", background: sel ? p.accentLight : "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, fontFamily: "inherit" }}>
-                      <div style={{ width: 32, height: 32, borderRadius: "50%", background: p.accent }} />
-                      <span style={{ fontSize: 12, fontWeight: 600, color: sel ? p.accent : "var(--text-muted)" }}>{p.nombre}</span>
-                      {sel && <span style={{ fontSize: 10, color: p.accent }}>✓ Activa</span>}
-                    </button>
-                  ); })}
-                </div>
-              </div>
-              <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "22px 24px" }}>
-                <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>📂 Categorías</h3>
-                <p style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 16 }}>Activa/desactiva categorías o crea nuevas.</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
-                  {todasCats.map(cat => { const activa = editando.categorias_activas.includes(cat.id); return (
-                    <div key={cat.id} style={{ display: "flex", alignItems: "center" }}>
-                      <button onClick={() => setEditando(prev => ({ ...prev, categorias_activas: activa ? prev.categorias_activas.filter(c => c !== cat.id) : [...prev.categorias_activas, cat.id] }))} style={{ background: activa ? "var(--accent-light)" : "var(--bg)", color: activa ? "var(--accent)" : "var(--text-muted)", border: `2px solid ${activa ? "var(--accent)" : "var(--border)"}`, borderRadius: cat.custom ? "999px 0 0 999px" : 999, padding: "7px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRight: cat.custom ? "none" : undefined }}>{cat.emoji} {cat.label} {activa ? "✓" : "+"}</button>
-                      {cat.custom && <button onClick={() => handleEliminarCategoria(cat.id)} style={{ background: "var(--warn-light)", color: "var(--warn)", border: `2px solid ${activa ? "var(--accent)" : "var(--border)"}`, borderLeft: "1px solid var(--border)", borderRadius: "0 999px 999px 0", padding: "7px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✕</button>}
-                    </div>
-                  ); })}
-                </div>
-                <div style={{ borderTop: "1px solid var(--border)", paddingTop: 18 }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 12 }}>+ Nueva categoría</p>
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
-                    <div style={{ position: "relative" }}>
-                      <button onClick={() => setMostrarEmojis(m => !m)} style={{ background: "var(--bg)", border: "1.5px solid var(--border)", borderRadius: 10, padding: "9px 14px", fontSize: 20, cursor: "pointer" }}>{nuevaCat.emoji}</button>
-                      {mostrarEmojis && (
-                        <div style={{ position: "absolute", top: "110%", left: 0, zIndex: 10, background: "var(--surface)", border: "1.5px solid var(--border)", borderRadius: 12, padding: 10, boxShadow: "var(--shadow-md)", display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4, width: 280 }}>
-                          {EMOJIS_SUGERIDOS.map(e => <button key={e} onClick={() => { setNuevaCat(p => ({ ...p, emoji: e })); setMostrarEmojis(false); }} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: 4, borderRadius: 6 }} onMouseEnter={ev => ev.currentTarget.style.background = "var(--accent-light)"} onMouseLeave={ev => ev.currentTarget.style.background = "none"}>{e}</button>)}
-                        </div>
-                      )}
-                    </div>
-                    <input style={{ ...inputStyle, flex: 1, minWidth: 140 }} placeholder="Ej: Cerrajero, Pintor..." value={nuevaCat.label} onChange={e => { setNuevaCat(p => ({ ...p, label: e.target.value })); setCatError(""); }} onKeyDown={e => e.key === "Enter" && handleAgregarCategoria()} />
-                    <select value={nuevaCat.grupo} onChange={e => setNuevaCat(p => ({ ...p, grupo: e.target.value }))} style={{ ...inputStyle, width: "auto", minWidth: 140, appearance: "none" }}>
-                      {GRUPOS.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
-                    </select>
-                    <button onClick={handleAgregarCategoria} style={{ background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, padding: "9px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Agregar</button>
+              {/* Stats principales */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
+                {[
+                  { label: "Pendientes", val: pendientes.length, bg: "#FDF3DC", color: "#8B6914", border: "#EDE5CC" },
+                  { label: "Aprobados", val: aprobados.length, bg: "#D8EFE4", color: "#2D6A4F", border: "#B8DDC8" },
+                  { label: "Total", val: servicios.length, bg: "white", color: "#1C1A16", border: "#E2DDD4" },
+                  { label: "Categorías", val: catsActivas.length, bg: "#E8F5EE", color: "#2D6A4F", border: "#C8E8D8" },
+                ].map(s => (
+                  <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 12, padding: "16px 18px" }}>
+                    <p style={{ fontSize: 30, fontWeight: 700, color: s.color, fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{s.val}</p>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: s.color, letterSpacing: "0.06em", textTransform: "uppercase", marginTop: 6, opacity: 0.8 }}>{s.label}</p>
                   </div>
-                  {catError && <p style={{ fontSize: 12, color: "var(--warn)", marginTop: 8 }}>⚠ {catError}</p>}
+                ))}
+              </div>
+
+              {/* Pendientes rápidos */}
+              {pendientes.length > 0 && (
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "18px 20px", marginBottom: 20 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F" }}>⏳ Pendientes de revisión</h3>
+                    <button onClick={() => setSeccion("servicios")} style={{ fontSize: 11, color: "#2D6A4F", background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", textDecoration: "underline" }}>Ver todos</button>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {pendientes.slice(0, 3).map(p => (
+                      <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #F0EDE8" }}>
+                        <div>
+                          <p style={{ fontSize: 13, fontWeight: 600 }}>{p.nombre}</p>
+                          <p style={{ fontSize: 11, color: "#7A7570" }}>{todasCats.find(c => c.id === p.categoria)?.label} · {p.telefono}</p>
+                        </div>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button onClick={() => handleAprobar(p.id)} style={{ background: "#D8EFE4", color: "#2D6A4F", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✓ Aprobar</button>
+                          <button onClick={() => handleRechazar(p.id)} style={{ background: "#FDECEA", color: "#C0392B", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+                {/* Servicios por categoría */}
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "18px 20px" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 16 }}>Servicios por categoría</h3>
+                  {porCategoria.length === 0
+                    ? <p style={{ fontSize: 12, color: "#7A7570" }}>Sin datos aún</p>
+                    : porCategoria.map(cat => (
+                      <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                        <span style={{ fontSize: 12, color: "#4A4540", width: 100, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.label}</span>
+                        <div style={{ flex: 1, height: 6, background: "#E8F5EE", borderRadius: 3, overflow: "hidden" }}>
+                          <div style={{ width: `${(cat.total / maxCat) * 100}%`, height: "100%", background: "#2D6A4F", borderRadius: 3 }} />
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: "#2D6A4F", width: 20, textAlign: "right" }}>{cat.total}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+
+                {/* Actividad 7 días */}
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "18px 20px" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 4 }}>Actividad últimos 7 días</h3>
+                  <p style={{ fontSize: 11, color: "#7A7570", marginBottom: 14 }}>Vistas y contactos</p>
+                  {eventos.length === 0
+                    ? <p style={{ fontSize: 12, color: "#7A7570" }}>Sin eventos registrados aún</p>
+                    : (
+                      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80 }}>
+                        {actividadDiaria.map((d, i) => (
+                          <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                            <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 2, flex: 1, justifyContent: "flex-end" }}>
+                              <div style={{ width: "100%", height: `${((d.vistas / maxActividad) * 60) || 2}px`, background: "#2D6A4F", borderRadius: "3px 3px 0 0", minHeight: 2 }} />
+                              <div style={{ width: "100%", height: `${((d.contactos / maxActividad) * 60) || 2}px`, background: "#8B6914", borderRadius: "3px 3px 0 0", minHeight: 2 }} />
+                            </div>
+                            <span style={{ fontSize: 9, color: "#7A7570" }}>{d.dia}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  }
+                  {eventos.length > 0 && (
+                    <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                      <span style={{ fontSize: 10, color: "#2D6A4F", display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, background: "#2D6A4F", borderRadius: 2, display: "inline-block" }} /> Vistas</span>
+                      <span style={{ fontSize: 10, color: "#8B6914", display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, background: "#8B6914", borderRadius: 2, display: "inline-block" }} /> Contactos</span>
+                    </div>
+                  )}
                 </div>
               </div>
-              <button onClick={handleGuardarCondominio} style={{ background: guardado ? "#27AE60" : "var(--accent)", color: "#fff", border: "none", borderRadius: 12, padding: "14px", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "background 0.3s" }}>{guardado ? "✓ ¡Configuración guardada!" : "Guardar configuración"}</button>
+
+              {/* Stats de eventos */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
+                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Tasa de contacto</p>
+                  <p style={{ fontSize: 32, fontWeight: 700, color: "#2D6A4F", fontFamily: "'DM Serif Display', serif" }}>{eventos.length > 0 ? `${tasaContacto}%` : "—"}</p>
+                  <p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>de vistas que llaman</p>
+                </div>
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
+                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Más visto</p>
+                  {masVistoSvc
+                    ? <><p style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F" }}>{masVistoSvc.nombre}</p><p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>{masVisto[1]} vista{masVisto[1] !== 1 ? "s" : ""}</p></>
+                    : <p style={{ fontSize: 12, color: "#7A7570" }}>Sin datos aún</p>
+                  }
+                </div>
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
+                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Más contactado</p>
+                  {masContactadoSvc
+                    ? <><p style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F" }}>{masContactadoSvc.nombre}</p><p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>{masContactado[1]} contacto{masContactado[1] !== 1 ? "s" : ""}</p></>
+                    : <p style={{ fontSize: 12, color: "#7A7570" }}>Sin datos aún</p>
+                  }
+                </div>
+              </div>
+
+              {/* Sin vistas */}
+              {sinVistas.length > 0 && (
+                <div style={{ background: "#FDF3DC", border: "1px solid #EDE5CC", borderRadius: 14, padding: "16px 20px" }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "#8B6914", marginBottom: 8 }}>⚠ {sinVistas.length} servicio{sinVistas.length > 1 ? "s" : ""} sin vistas</p>
+                  <p style={{ fontSize: 12, color: "#7A6040" }}>{sinVistas.slice(0, 3).map(s => s.nombre).join(", ")}{sinVistas.length > 3 ? ` y ${sinVistas.length - 3} más...` : ""}</p>
+                </div>
+              )}
             </div>
           )}
+
+          {/* ── SERVICIOS ── */}
+          {seccion === "servicios" && (
+            <div className="fade-up">
+              <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 20 }}>Servicios</h1>
+              {cargando ? <Cargando /> : (
+                <div>
+                  {pendientes.length > 0 && (
+                    <div style={{ marginBottom: 24 }}>
+                      <h3 className="serif" style={{ fontSize: 18, marginBottom: 12, color: "#1A3F2F" }}>⏳ Pendientes ({pendientes.length})</h3>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{pendientes.map(p => <FilaServicio key={p.id} p={p} esPendiente />)}</div>
+                    </div>
+                  )}
+                  <div>
+                    <h3 className="serif" style={{ fontSize: 18, marginBottom: 12, color: "#1A3F2F" }}>✅ Aprobados ({aprobados.length})</h3>
+                    {aprobados.length === 0
+                      ? <p style={{ color: "#7A7570", fontSize: 14 }}>Sin servicios aprobados aún.</p>
+                      : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{aprobados.map(p => <FilaServicio key={p.id} p={p} esPendiente={false} />)}</div>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── CARGA MASIVA ── */}
+          {seccion === "carga_masiva" && (
+            <div className="fade-up">
+              <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 20 }}>Carga Masiva</h1>
+              <CargaMasiva condominios={condominios} todasCats={todasCats} />
+            </div>
+          )}
+
+          {/* ── CONFIGURACIÓN ── */}
+          {seccion === "configuracion" && editando && (
+            <div className="fade-up">
+              <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 20 }}>Configuración</h1>
+              <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "20px 24px" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 12 }}>🏠 Nombre del condominio</h3>
+                  <input style={inputStyle} value={editando.nombre} onChange={e => setEditando(p => ({ ...p, nombre: e.target.value }))} />
+                </div>
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "20px 24px" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 4 }}>🎨 Paleta de colores</h3>
+                  <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 16 }}>El color se aplica en toda la vista pública incluyendo el hero.</p>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 10 }}>
+                    {PALETAS.map(p => { const sel = editando.colores.accent === p.accent; return (
+                      <button key={p.nombre} onClick={() => setEditando(prev => ({ ...prev, colores: { accent: p.accent, accentLight: p.accentLight, bg: p.bg, surface: p.surface, border: p.border } }))}
+                        style={{ border: `2px solid ${sel ? p.accent : "#E2DDD4"}`, borderRadius: 12, padding: "12px 10px", cursor: "pointer", background: sel ? p.accentLight : "#F5F2EC", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, fontFamily: "inherit" }}>
+                        <div style={{ width: 28, height: 28, borderRadius: "50%", background: p.accent }} />
+                        <span style={{ fontSize: 11, fontWeight: 600, color: sel ? p.accent : "#7A7570" }}>{p.nombre}</span>
+                        {sel && <span style={{ fontSize: 10, color: p.accent }}>✓ Activa</span>}
+                      </button>
+                    ); })}
+                  </div>
+                </div>
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "20px 24px" }}>
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 4 }}>📂 Categorías</h3>
+                  <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 16 }}>Activa/desactiva o crea nuevas.</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
+                    {todasCats.map(cat => { const activa = editando.categorias_activas.includes(cat.id); return (
+                      <div key={cat.id} style={{ display: "flex", alignItems: "center" }}>
+                        <button onClick={() => setEditando(prev => ({ ...prev, categorias_activas: activa ? prev.categorias_activas.filter(c => c !== cat.id) : [...prev.categorias_activas, cat.id] }))} style={{ background: activa ? "#D8EFE4" : "#F5F2EC", color: activa ? "#2D6A4F" : "#7A7570", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderRadius: cat.custom ? "999px 0 0 999px" : 999, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRight: cat.custom ? "none" : undefined }}>{cat.emoji} {cat.label} {activa ? "✓" : "+"}</button>
+                        {cat.custom && <button onClick={() => handleEliminarCategoria(cat.id)} style={{ background: "#FDECEA", color: "#C0392B", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderLeft: "1px solid #E2DDD4", borderRadius: "0 999px 999px 0", padding: "6px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✕</button>}
+                      </div>
+                    ); })}
+                  </div>
+                  <div style={{ borderTop: "1px solid #E2DDD4", paddingTop: 16 }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 12 }}>+ Nueva categoría</p>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
+                      <div style={{ position: "relative" }}>
+                        <button onClick={() => setMostrarEmojis(m => !m)} style={{ background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: "9px 14px", fontSize: 20, cursor: "pointer" }}>{nuevaCat.emoji}</button>
+                        {mostrarEmojis && (
+                          <div style={{ position: "absolute", top: "110%", left: 0, zIndex: 10, background: "white", border: "1.5px solid #E2DDD4", borderRadius: 12, padding: 10, boxShadow: "0 8px 32px rgba(28,26,22,0.13)", display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4, width: 280 }}>
+                            {EMOJIS_SUGERIDOS.map(e => <button key={e} onClick={() => { setNuevaCat(p => ({ ...p, emoji: e })); setMostrarEmojis(false); }} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: 4, borderRadius: 6 }} onMouseEnter={ev => ev.currentTarget.style.background = "#D8EFE4"} onMouseLeave={ev => ev.currentTarget.style.background = "none"}>{e}</button>)}
+                          </div>
+                        )}
+                      </div>
+                      <input style={{ ...inputStyle, flex: 1, minWidth: 140 }} placeholder="Ej: Cerrajero, Pintor..." value={nuevaCat.label} onChange={e => { setNuevaCat(p => ({ ...p, label: e.target.value })); setCatError(""); }} onKeyDown={e => e.key === "Enter" && handleAgregarCategoria()} />
+                      <select value={nuevaCat.grupo} onChange={e => setNuevaCat(p => ({ ...p, grupo: e.target.value }))} style={{ ...inputStyle, width: "auto", minWidth: 130, appearance: "none" }}>
+                        {GRUPOS.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+                      </select>
+                      <button onClick={handleAgregarCategoria} style={{ background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Agregar</button>
+                    </div>
+                    {catError && <p style={{ fontSize: 12, color: "#C0392B", marginTop: 8 }}>⚠ {catError}</p>}
+                  </div>
+                </div>
+                <button onClick={handleGuardarCondominio} style={{ background: guardado ? "#27AE60" : "#2D6A4F", color: "#fff", border: "none", borderRadius: 12, padding: "14px", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "background 0.3s" }}>{guardado ? "✓ ¡Configuración guardada!" : "Guardar configuración"}</button>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
       {editandoServicio && <ModalEditarServicio />}
