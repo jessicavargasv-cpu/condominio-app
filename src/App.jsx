@@ -454,32 +454,36 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
 const Hero = ({ condominio, onNavegar }) => (
   <div style={{
     background: "linear-gradient(135deg, #ffffff 0%, #e8f5ee 60%, #c8e8d8 100%)",
-    padding: "80px 32px 88px", textAlign: "center", position: "relative", overflow: "hidden",
+    minHeight: "calc(100vh - 56px)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    textAlign: "center", position: "relative", overflow: "hidden",
+    padding: "40px 32px",
   }}>
     {/* Manchas aurora suaves */}
-    <div style={{ position: "absolute", top: -60, right: -80, width: 400, height: 300, borderRadius: "50%", background: "var(--accent)", opacity: 0.06, pointerEvents: "none" }} />
-    <div style={{ position: "absolute", bottom: -40, left: -60, width: 300, height: 220, borderRadius: "50%", background: "var(--accent)", opacity: 0.05, pointerEvents: "none" }} />
+    <div style={{ position: "absolute", top: -80, right: -100, width: 500, height: 400, borderRadius: "50%", background: "var(--accent)", opacity: 0.06, pointerEvents: "none" }} />
+    <div style={{ position: "absolute", bottom: -60, left: -80, width: 400, height: 300, borderRadius: "50%", background: "var(--accent)", opacity: 0.05, pointerEvents: "none" }} />
+    <div style={{ position: "absolute", bottom: 40, right: 100, width: 200, height: 200, borderRadius: "50%", background: "var(--accent)", opacity: 0.04, pointerEvents: "none" }} />
 
-    <div className="fade-up" style={{ position: "relative", zIndex: 1 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 12 }}>
+    <div className="fade-up" style={{ position: "relative", zIndex: 1, maxWidth: 600 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 16 }}>
         {condominio.nombre}
       </p>
-      <h1 className="serif" style={{ fontSize: 48, lineHeight: 1.15, marginBottom: 16, color: "#1A3F2F" }}>
+      <h1 className="serif" style={{ fontSize: 54, lineHeight: 1.12, marginBottom: 20, color: "#1A3F2F" }}>
         Cuando un vecino tiene<br />el dato, todos ganan
       </h1>
-      <p style={{ fontSize: 16, color: "#4A7C6F", lineHeight: 1.65, maxWidth: 460, margin: "0 auto 32px" }}>
+      <p style={{ fontSize: 17, color: "#4A7C6F", lineHeight: 1.65, maxWidth: 440, margin: "0 auto 36px" }}>
         El directorio de servicios que recomiendan tus propios vecinos.
       </p>
       <button onClick={() => onNavegar("servicios")} style={{
         background: "var(--accent)", color: "#fff", border: "none",
-        borderRadius: 10, padding: "13px 28px", fontSize: 14, fontWeight: 700,
+        borderRadius: 10, padding: "14px 32px", fontSize: 15, fontWeight: 700,
         cursor: "pointer", fontFamily: "inherit", display: "inline-flex",
         alignItems: "center", gap: 8, transition: "opacity 0.2s",
       }}
         onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
         onMouseLeave={e => e.currentTarget.style.opacity = "1"}
       >
-        Ver servicios <ArrowRight size={15} strokeWidth={2.5} />
+        Ver servicios <ArrowRight size={16} strokeWidth={2.5} />
       </button>
     </div>
   </div>
@@ -731,12 +735,7 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
       />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {vista === "inicio" && (
-          <>
-            <Hero condominio={condominio} onNavegar={navegar} />
-            <ComoFunciona onProponer={onProponer} />
-          </>
-        )}
+        {vista === "inicio" && <Hero condominio={condominio} onNavegar={navegar} />}
         {vista === "servicios" && (
           <VistaServicios
             condominio={condominio}
@@ -803,11 +802,9 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
   );
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
-      <div style={{ flex: 1, padding: "40px 32px" }}>
-        <button onClick={onVolver} style={{ background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: 14, padding: "0 0 24px", fontFamily: "inherit" }}>← Volver</button>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 24, maxWidth: 900, margin: "0 auto", alignItems: "start" }}>
+    <div style={{ minHeight: "calc(100vh - 56px)", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, padding: "32px", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 24, maxWidth: 900, margin: "0 auto", width: "100%", flex: 1, alignItems: "stretch" }}>
 
           {/* Columna izquierda — motivacional */}
           <div style={{
