@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
-const SUPABASE_URL = " https://gztkowyoztqupeplhvev.supabase.co";
+const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6dGtvd3lvenRxdXBlcGxodmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTA3NTksImV4cCI6MjA4OTQyNjc1OX0.MiUvxkuexamCavTRGoL-xCvmdpe6X0R8CClPKRHQNJI";
 
 const ADMIN_EMAIL = "admin.appx@gmail.com";
@@ -348,7 +348,7 @@ const ModalValoracion = ({ p, todasCats, onCerrar, onValorado }) => {
 // ── Tarjeta servicio ──────────────────────────────────────────────
 const ServicioCard = ({ p, todasCats, condominio }) => {
   const [modalVal, setModalVal] = useState(false);
-  const [valoraciones, setValoraciones] = useState(null);
+  const [valoraciones, setValoraciones] = useState(null); // null = cargando, [] = sin datos
 
   const cargarValoraciones = () => {
     query("valoraciones", { filter: `proveedor_id=eq.${p.id}`, select: "estrellas" })
@@ -357,7 +357,9 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
 
   useEffect(() => { cargarValoraciones(); }, [p.id]);
 
-  const promedio = valoraciones && valoraciones.length > 0
+  // null = aún cargando (no mostrar nada), [] = cargado sin valoraciones
+  const cargandoVal = valoraciones === null;
+  const promedio = !cargandoVal && valoraciones.length > 0
     ? (valoraciones.reduce((s, v) => s + v.estrellas, 0) / valoraciones.length).toFixed(1)
     : null;
 
@@ -404,10 +406,12 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
             onMouseEnter={e => e.currentTarget.style.background = "var(--bg)"}
             onMouseLeave={e => e.currentTarget.style.background = "none"}
           >
-            <span style={{ fontSize: 13 }}>★</span>
-            {promedio
-              ? <span style={{ fontWeight: 600 }}>{promedio}/7 <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({valoraciones.length})</span></span>
-              : <span>Valorar</span>
+            <span style={{ fontSize: 13, color: promedio ? "var(--gold)" : "var(--text-muted)" }}>★</span>
+            {cargandoVal
+              ? null
+              : promedio
+                ? <span style={{ fontWeight: 600 }}>{promedio}/7 <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({valoraciones.length} vecino{valoraciones.length !== 1 ? "s" : ""})</span></span>
+                : <span>Valorar</span>
             }
           </button>
         </div>
@@ -1642,8 +1646,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
         {/* Sidebar */}
         <div style={{ width: 220, flexShrink: 0, background: "#e8f5ee", borderRight: "1px solid #D4EAE0", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
           {/* Logo */}
-          <div style={{ padding: "20px 16px 16px", borderBottom: "1px solid #D4EAE0" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 12 }}>
+          <div style={{ padding: "18px 16px 14px", borderBottom: "1px solid #D4EAE0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
               <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
                 <rect width="28" height="28" rx="7" fill="#2D6A4F"/>
                 <circle cx="9" cy="14" r="2.2" fill="white"/>
@@ -1654,6 +1658,15 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
               <span style={{ fontSize: 16, fontWeight: 700, color: "#2D6A4F" }}>1</span>
               <span style={{ fontSize: 16, fontWeight: 300, color: "#1C1A16", marginLeft: -4 }}>dato</span>
             </div>
+          </div>
+
+          {/* Condominios — nivel global */}
+          <div style={{ borderBottom: "1px solid #D4EAE0" }}>
+            <SideLink id="condominios" icon="🏘️" label="Condominios" badge={condominios.length} />
+          </div>
+
+          {/* Selector condominio activo */}
+          <div style={{ padding: "14px 16px", borderBottom: "1px solid #D4EAE0" }}>
             <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", marginBottom: 4 }}>Panel Admin</p>
             <select value={condominioActivo} onChange={e => setCondominioActivo(e.target.value)}
               style={{ width: "100%", fontSize: 12, fontWeight: 600, color: "#1A3F2F", background: "transparent", border: "none", outline: "none", cursor: "pointer", fontFamily: "inherit" }}>
@@ -1661,10 +1674,9 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
             </select>
           </div>
 
-          {/* Nav */}
+          {/* Nav por condominio */}
           <div style={{ flex: 1, padding: "12px 0" }}>
             <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", padding: "0 16px 8px" }}>Menú</p>
-            <SideLink id="condominios" icon="🏘️" label="Condominios" badge={condominios.length} />
             <SideLink id="dashboard" icon="📊" label="Dashboard" />
             <SideLink id="servicios" icon="📋" label="Servicios" badge={pendientes.length} />
             <SideLink id="carga_masiva" icon="📥" label="Carga Masiva" />
