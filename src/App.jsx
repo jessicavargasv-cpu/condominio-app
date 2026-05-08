@@ -12,7 +12,7 @@ import {
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
 const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
-const SUPABASE_KEY = "sb_publishable_3mzA7ePIapL8XEhlno1bZQ_jU0sF9h2";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6dGtvd3lvenRxdXBlcGxodmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTA3NTksImV4cCI6MjA4OTQyNjc1OX0.MiUvxkuexamCavTRGoL-xCvmdpe6X0R8CClPKRHQNJI";
 
 const ADMIN_EMAIL = "admin.appx@gmail.com";
 
