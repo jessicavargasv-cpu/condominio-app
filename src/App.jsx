@@ -468,16 +468,17 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
 const Hero = ({ condominio, onNavegar }) => (
   <div style={{
     background: "linear-gradient(135deg, var(--surface) 0%, var(--accent-light) 60%, var(--accent-light) 100%)",
+    flex: 1,
     display: "flex", alignItems: "center", justifyContent: "center",
     textAlign: "center", position: "relative", overflow: "hidden",
-    padding: "80px 32px 100px",
+    padding: "48px 32px",
   }}>
     <div style={{ position: "absolute", top: -80, right: -100, width: 500, height: 400, borderRadius: "50%", background: "var(--accent)", opacity: 0.06, pointerEvents: "none" }} />
     <div style={{ position: "absolute", bottom: -60, left: -80, width: 400, height: 300, borderRadius: "50%", background: "var(--accent)", opacity: 0.05, pointerEvents: "none" }} />
     <div style={{ position: "absolute", bottom: 40, right: 100, width: 200, height: 200, borderRadius: "50%", background: "var(--accent)", opacity: 0.04, pointerEvents: "none" }} />
 
     <div className="fade-up" style={{ position: "relative", zIndex: 1, maxWidth: 600 }}>
-      <p className="serif" style={{ fontSize: 20, fontStyle: "italic", color: "var(--accent)", marginBottom: 16 }}>
+      <p style={{ fontSize: 16, fontWeight: 600, color: "var(--accent)", marginBottom: 16, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.01em" }}>
         {condominio.nombre}
       </p>
       <h1 className="serif" style={{ fontSize: 54, lineHeight: 1.12, marginBottom: 20, color: "var(--text)" }}>
@@ -1604,40 +1605,39 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                   </div>
                   <div style={{ borderTop: "1px solid #E2DDD4", paddingTop: 16 }}>
                     <p style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 16 }}>+ Nueva categoría</p>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                      {/* Fila 1: ícono + nombre */}
-                      <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
-                        <div>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Ícono</label>
-                          <div style={{ position: "relative" }}>
-                            <button onClick={() => setMostrarEmojis(m => !m)} style={{ background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: "9px 14px", fontSize: 20, cursor: "pointer" }}>{nuevaCat.emoji}</button>
-                            {mostrarEmojis && (
-                              <div style={{ position: "absolute", top: "110%", left: 0, zIndex: 10, background: "white", border: "1.5px solid #E2DDD4", borderRadius: 12, padding: 10, boxShadow: "0 8px 32px rgba(28,26,22,0.13)", display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4, width: 280 }}>
-                                {EMOJIS_SUGERIDOS.map(e => <button key={e} onClick={() => { setNuevaCat(p => ({ ...p, emoji: e })); setMostrarEmojis(false); }} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: 4, borderRadius: 6 }} onMouseEnter={ev => ev.currentTarget.style.background = "#D8EFE4"} onMouseLeave={ev => ev.currentTarget.style.background = "none"}>{e}</button>)}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Nombre de la categoría</label>
-                          <input style={{ ...inputStyle, background: "white" }} placeholder="Ej: Cerrajero, Pintor, Limpieza..." value={nuevaCat.label} onChange={e => { setNuevaCat(p => ({ ...p, label: e.target.value })); setCatError(""); }} onKeyDown={e => e.key === "Enter" && handleAgregarCategoria()} />
+                    <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Ícono</label>
+                        <div style={{ position: "relative" }}>
+                          <button onClick={() => setMostrarEmojis(m => !m)} style={{ background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: "9px 14px", fontSize: 20, cursor: "pointer" }}>{nuevaCat.emoji}</button>
+                          {mostrarEmojis && (
+                            <div style={{ position: "absolute", top: "110%", left: 0, zIndex: 10, background: "white", border: "1.5px solid #E2DDD4", borderRadius: 12, padding: 10, boxShadow: "0 8px 32px rgba(28,26,22,0.13)", display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4, width: 280 }}>
+                              {EMOJIS_SUGERIDOS.map(e => <button key={e} onClick={() => { setNuevaCat(p => ({ ...p, emoji: e })); setMostrarEmojis(false); }} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: 4, borderRadius: 6 }} onMouseEnter={ev => ev.currentTarget.style.background = "#D8EFE4"} onMouseLeave={ev => ev.currentTarget.style.background = "none"}>{e}</button>)}
+                            </div>
+                          )}
                         </div>
                       </div>
-                      {/* Fila 2: grupo + botón */}
-                      <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
-                        <div style={{ flex: 1 }}>
-                          <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Grupo al que pertenece</label>
-                          <select value={nuevaCat.grupo} onChange={e => setNuevaCat(p => ({ ...p, grupo: e.target.value }))} style={{ ...inputStyle, appearance: "none", background: "white" }}>
-                            {GRUPOS.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
-                          </select>
-                        </div>
-                        <button onClick={handleAgregarCategoria} style={{ background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>Agregar</button>
+                      <div style={{ flex: 1, minWidth: 140 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Nombre</label>
+                        <input style={{ ...inputStyle, background: "white" }} placeholder="Ej: Cerrajero, Pintor..." value={nuevaCat.label} onChange={e => { setNuevaCat(p => ({ ...p, label: e.target.value })); setCatError(""); }} onKeyDown={e => e.key === "Enter" && handleAgregarCategoria()} />
+                      </div>
+                      <div style={{ minWidth: 130 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Grupo</label>
+                        <select value={nuevaCat.grupo} onChange={e => setNuevaCat(p => ({ ...p, grupo: e.target.value }))} style={{ ...inputStyle, appearance: "none", background: "white" }}>
+                          {GRUPOS.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "transparent", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>–</label>
+                        <button onClick={handleAgregarCategoria} style={{ background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Agregar</button>
                       </div>
                     </div>
                     {catError && <p style={{ fontSize: 12, color: "#C0392B", marginTop: 8 }}>⚠ {catError}</p>}
                   </div>
                 </div>
-                <button onClick={handleGuardarCondominio} style={{ background: guardado ? "#27AE60" : "#2D6A4F", color: "#fff", border: "none", borderRadius: 12, padding: "14px", fontSize: 15, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "background 0.3s" }}>{guardado ? "✓ ¡Configuración guardada!" : "Guardar configuración"}</button>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  <button onClick={handleGuardarCondominio} style={{ background: guardado ? "#27AE60" : "#2D6A4F", color: "#fff", border: "none", borderRadius: 12, padding: "12px 32px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "background 0.3s" }}>{guardado ? "✓ Guardado" : "Guardar configuración"}</button>
+                </div>
               </div>
             </div>
           )}
