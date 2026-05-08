@@ -7,7 +7,7 @@ import {
   HeartPulse, Baby, Users,
   FileText, Package, MoreHorizontal,
   Search, ChevronDown, ChevronRight, ArrowRight, Phone, Star, Shield,
-  PlusCircle, X, MessageCircle, Mail
+  PlusCircle, X, MessageCircle, Mail, EyeOff
 } from "lucide-react";
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
@@ -468,17 +468,16 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
 const Hero = ({ condominio, onNavegar }) => (
   <div style={{
     background: "linear-gradient(135deg, var(--surface) 0%, var(--accent-light) 60%, var(--accent-light) 100%)",
-    minHeight: "calc(100vh - 56px)",
     display: "flex", alignItems: "center", justifyContent: "center",
     textAlign: "center", position: "relative", overflow: "hidden",
-    padding: "40px 32px",
+    padding: "80px 32px 100px",
   }}>
     <div style={{ position: "absolute", top: -80, right: -100, width: 500, height: 400, borderRadius: "50%", background: "var(--accent)", opacity: 0.06, pointerEvents: "none" }} />
     <div style={{ position: "absolute", bottom: -60, left: -80, width: 400, height: 300, borderRadius: "50%", background: "var(--accent)", opacity: 0.05, pointerEvents: "none" }} />
     <div style={{ position: "absolute", bottom: 40, right: 100, width: 200, height: 200, borderRadius: "50%", background: "var(--accent)", opacity: 0.04, pointerEvents: "none" }} />
 
     <div className="fade-up" style={{ position: "relative", zIndex: 1, maxWidth: 600 }}>
-      <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 16 }}>
+      <p className="serif" style={{ fontSize: 20, fontStyle: "italic", color: "var(--accent)", marginBottom: 16 }}>
         {condominio.nombre}
       </p>
       <h1 className="serif" style={{ fontSize: 54, lineHeight: 1.12, marginBottom: 20, color: "var(--text)" }}>
@@ -846,7 +845,9 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
         justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100,
       }}>
         <Logo1dato onVolver={onVolver} />
-        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{condominio.nombre}</span>
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+          <strong style={{ color: "var(--text)" }}>{condominio.nombre}</strong>
+        </span>
       </div>
 
       <div style={{ flex: 1, padding: "32px", display: "flex", flexDirection: "column" }}>
@@ -1007,9 +1008,9 @@ const LoginAdmin = ({ onLogin }) => {
                 />
                 <button
                   onClick={() => setVerPassword(v => !v)}
-                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 13, fontFamily: "inherit", padding: 2 }}
+                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex", alignItems: "center", padding: 2 }}
                 >
-                  {verPassword ? "Ocultar" : "Ver"}
+                  {verPassword ? <EyeOff size={16} strokeWidth={1.75} /> : <Eye size={16} strokeWidth={1.75} />}
                 </button>
               </div>
             </div>
@@ -1602,21 +1603,36 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                     ); })}
                   </div>
                   <div style={{ borderTop: "1px solid #E2DDD4", paddingTop: 16 }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 12 }}>+ Nueva categoría</p>
-                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
-                      <div style={{ position: "relative" }}>
-                        <button onClick={() => setMostrarEmojis(m => !m)} style={{ background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: "9px 14px", fontSize: 20, cursor: "pointer" }}>{nuevaCat.emoji}</button>
-                        {mostrarEmojis && (
-                          <div style={{ position: "absolute", top: "110%", left: 0, zIndex: 10, background: "white", border: "1.5px solid #E2DDD4", borderRadius: 12, padding: 10, boxShadow: "0 8px 32px rgba(28,26,22,0.13)", display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4, width: 280 }}>
-                            {EMOJIS_SUGERIDOS.map(e => <button key={e} onClick={() => { setNuevaCat(p => ({ ...p, emoji: e })); setMostrarEmojis(false); }} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: 4, borderRadius: 6 }} onMouseEnter={ev => ev.currentTarget.style.background = "#D8EFE4"} onMouseLeave={ev => ev.currentTarget.style.background = "none"}>{e}</button>)}
+                    <p style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 16 }}>+ Nueva categoría</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {/* Fila 1: ícono + nombre */}
+                      <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
+                        <div>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Ícono</label>
+                          <div style={{ position: "relative" }}>
+                            <button onClick={() => setMostrarEmojis(m => !m)} style={{ background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: "9px 14px", fontSize: 20, cursor: "pointer" }}>{nuevaCat.emoji}</button>
+                            {mostrarEmojis && (
+                              <div style={{ position: "absolute", top: "110%", left: 0, zIndex: 10, background: "white", border: "1.5px solid #E2DDD4", borderRadius: 12, padding: 10, boxShadow: "0 8px 32px rgba(28,26,22,0.13)", display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 4, width: 280 }}>
+                                {EMOJIS_SUGERIDOS.map(e => <button key={e} onClick={() => { setNuevaCat(p => ({ ...p, emoji: e })); setMostrarEmojis(false); }} style={{ background: "none", border: "none", fontSize: 18, cursor: "pointer", padding: 4, borderRadius: 6 }} onMouseEnter={ev => ev.currentTarget.style.background = "#D8EFE4"} onMouseLeave={ev => ev.currentTarget.style.background = "none"}>{e}</button>)}
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Nombre de la categoría</label>
+                          <input style={{ ...inputStyle, background: "white" }} placeholder="Ej: Cerrajero, Pintor, Limpieza..." value={nuevaCat.label} onChange={e => { setNuevaCat(p => ({ ...p, label: e.target.value })); setCatError(""); }} onKeyDown={e => e.key === "Enter" && handleAgregarCategoria()} />
+                        </div>
                       </div>
-                      <input style={{ ...inputStyle, flex: 1, minWidth: 140 }} placeholder="Ej: Cerrajero, Pintor..." value={nuevaCat.label} onChange={e => { setNuevaCat(p => ({ ...p, label: e.target.value })); setCatError(""); }} onKeyDown={e => e.key === "Enter" && handleAgregarCategoria()} />
-                      <select value={nuevaCat.grupo} onChange={e => setNuevaCat(p => ({ ...p, grupo: e.target.value }))} style={{ ...inputStyle, width: "auto", minWidth: 130, appearance: "none" }}>
-                        {GRUPOS.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
-                      </select>
-                      <button onClick={handleAgregarCategoria} style={{ background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: "9px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Agregar</button>
+                      {/* Fila 2: grupo + botón */}
+                      <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
+                        <div style={{ flex: 1 }}>
+                          <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Grupo al que pertenece</label>
+                          <select value={nuevaCat.grupo} onChange={e => setNuevaCat(p => ({ ...p, grupo: e.target.value }))} style={{ ...inputStyle, appearance: "none", background: "white" }}>
+                            {GRUPOS.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+                          </select>
+                        </div>
+                        <button onClick={handleAgregarCategoria} style={{ background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>Agregar</button>
+                      </div>
                     </div>
                     {catError && <p style={{ fontSize: 12, color: "#C0392B", marginTop: 8 }}>⚠ {catError}</p>}
                   </div>
