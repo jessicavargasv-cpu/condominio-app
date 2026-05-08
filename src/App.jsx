@@ -241,9 +241,12 @@ const ModalValoracion = ({ p, todasCats, onCerrar, onValorado }) => {
     setEnviando(true);
     await query("valoraciones", { insert: { proveedor_id: p.id, estrellas, comentario: comentario.trim() || null } });
     marcarValorado(p.id);
+    // Recargar valoraciones del modal para mostrar promedio actualizado
+    const updated = await query("valoraciones", { filter: `proveedor_id=eq.${p.id}` });
+    if (Array.isArray(updated)) setValoraciones(updated);
     setEnviado(true);
     setEnviando(false);
-    // Bug 2 fix: notificar a la tarjeta para que recargue sus valoraciones
+    // Notificar a la tarjeta para que recargue sus valoraciones
     if (onValorado) onValorado();
   };
 
@@ -264,8 +267,8 @@ const ModalValoracion = ({ p, todasCats, onCerrar, onValorado }) => {
           </button>
         </div>
 
-        {/* Promedio actual */}
-        {!cargando && (
+        {/* Promedio actual — ocultar si ya votó y aún no hay promedio */}
+        {!cargando && !(( enviado || yaVoto) && !promedio) && (
           <div style={{ background: "var(--bg)", borderRadius: 12, padding: "14px 16px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
             {promedio ? (
               <>
@@ -656,7 +659,7 @@ const Hero = ({ condominio, onNavegar }) => (
     <div className="fade-up" style={{ position: "relative", zIndex: 1, maxWidth: 600 }}>
       <div style={{ marginBottom: 16 }}>
         <p style={{ fontSize: 16, fontWeight: 600, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.01em" }}>
-          {condominio.nombre}{condominio.comuna ? <span style={{ fontWeight: 400, opacity: 0.75 }}> · {condominio.comuna}</span> : null}
+          {condominio.nombre}{condominio.comuna ? <span style={{ fontWeight: 400, color: "var(--text)", opacity: 0.6 }}> · {condominio.comuna}</span> : null}
         </p>
       </div>
       <h1 className="serif" style={{ fontSize: 54, lineHeight: 1.12, marginBottom: 20, color: "var(--text)" }}>
