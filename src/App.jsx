@@ -208,42 +208,209 @@ const registrarEvento = async (proveedorId, condominio, tipo) => {
   } catch (e) { /* silencioso */ }
 };
 
-// ── Tarjeta servicio ──────────────────────────────────────────────
-const ServicioCard = ({ p, todasCats, condominio }) => (
-  <div className="fade-up" style={{
-    background: "var(--surface)", border: "1px solid var(--border)",
-    borderRadius: "var(--radius)", padding: "18px 20px",
-    boxShadow: "var(--shadow)", display: "flex", flexDirection: "column", gap: 8,
-    transition: "transform 0.2s, box-shadow 0.2s",
-  }}
-    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}
-    onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--shadow)"; }}
-  >
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-      <div>
-        <p style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</p>
-        <a href={`tel:${p.telefono.replace(/\s/g, "")}`}
-          onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
-          style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2, display: "flex", alignItems: "center", gap: 4, textDecoration: "none" }}
-          onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
-          onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
-        >
-          <Phone size={10} strokeWidth={2} /> {p.telefono}
-        </a>
+// ── Helpers valoraciones ──────────────────────────────────────────
+const COOKIE_KEY = "1dato_valoraciones";
+const getCookieVal = () => { try { return JSON.parse(localStorage.getItem(COOKIE_KEY) || "{}"); } catch { return {}; } };
+const setCookieVal = (obj) => { try { localStorage.setItem(COOKIE_KEY, JSON.stringify(obj)); } catch {} };
+const yaValoro = (proveedorId) => !!getCookieVal()[proveedorId];
+const marcarValorado = (proveedorId) => { const v = getCookieVal(); v[proveedorId] = true; setCookieVal(v); };
+
+// ── Modal Valoración ──────────────────────────────────────────────
+const ModalValoracion = ({ p, todasCats, onCerrar }) => {
+  const [estrellas, setEstrellas] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [comentario, setComentario] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [enviado, setEnviado] = useState(false);
+  const [valoraciones, setValoraciones] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const yaVoto = yaValoro(p.id);
+
+  useEffect(() => {
+    query("valoraciones", { filter: `proveedor_id=eq.${p.id}` })
+      .then(data => { setValoraciones(Array.isArray(data) ? data : []); setCargando(false); });
+  }, [p.id]);
+
+  const promedio = valoraciones.length > 0
+    ? (valoraciones.reduce((s, v) => s + v.estrellas, 0) / valoraciones.length).toFixed(1)
+    : null;
+
+  const handleEnviar = async () => {
+    if (!estrellas) return;
+    setEnviando(true);
+    await query("valoraciones", { insert: { proveedor_id: p.id, estrellas, comentario: comentario.trim() || null } });
+    marcarValorado(p.id);
+    setEnviado(true);
+    setEnviando(false);
+  };
+
+  return (
+    <div onClick={e => e.target === e.currentTarget && onCerrar()}
+      style={{ position: "fixed", inset: 0, background: "rgba(28,26,22,0.5)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div className="fade-up" style={{ background: "var(--surface)", borderRadius: 16, boxShadow: "var(--shadow-md)", padding: "28px 32px", width: "100%", maxWidth: 420 }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 4 }}>
+              {todasCats.find(c => c.id === p.categoria)?.label}
+            </p>
+            <h3 className="serif" style={{ fontSize: 22 }}>{p.nombre}</h3>
+          </div>
+          <button onClick={onCerrar} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 4 }}>
+            <X size={18} strokeWidth={2} />
+          </button>
+        </div>
+
+        {/* Promedio actual */}
+        {!cargando && (
+          <div style={{ background: "var(--bg)", borderRadius: 12, padding: "14px 16px", marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+            {promedio ? (
+              <>
+                <div style={{ display: "flex", gap: 2 }}>
+                  {[1,2,3,4,5,6,7].map(n => (
+                    <span key={n} style={{ fontSize: 16, color: n <= Math.round(parseFloat(promedio)) ? "var(--gold)" : "var(--border)" }}>★</span>
+                  ))}
+                </div>
+                <div>
+                  <span style={{ fontWeight: 700, fontSize: 18, color: "var(--text)" }}>{promedio}</span>
+                  <span style={{ fontSize: 13, color: "var(--text-muted)", marginLeft: 4 }}>/7</span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)", marginLeft: 8 }}>({valoraciones.length} vecino{valoraciones.length !== 1 ? "s" : ""})</span>
+                </div>
+              </>
+            ) : (
+              <p style={{ fontSize: 13, color: "var(--text-muted)" }}>Sin valoraciones aún. ¡Sé el primero!</p>
+            )}
+          </div>
+        )}
+
+        {/* Formulario o mensaje */}
+        {enviado || yaVoto ? (
+          <div style={{ textAlign: "center", padding: "16px 0" }}>
+            <p style={{ fontSize: 32, marginBottom: 10 }}>🙌</p>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "var(--text)" }}>
+              {enviado ? "¡Gracias por tu valoración!" : "Ya valoraste este servicio"}
+            </p>
+            <p style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>Tu opinión ayuda a toda la comunidad.</p>
+            <button onClick={onCerrar} style={{ marginTop: 16, background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, padding: "10px 24px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cerrar</button>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <label style={{ ...labelStyle, marginBottom: 10 }}>Tu puntuación *</label>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[1,2,3,4,5,6,7].map(n => (
+                  <button key={n}
+                    onClick={() => setEstrellas(n)}
+                    onMouseEnter={() => setHover(n)}
+                    onMouseLeave={() => setHover(0)}
+                    style={{ background: "none", border: "none", cursor: "pointer", fontSize: 28, padding: 2, transition: "transform 0.1s", transform: (hover || estrellas) >= n ? "scale(1.15)" : "scale(1)" }}
+                  >
+                    <span style={{ color: n <= (hover || estrellas) ? "var(--gold)" : "var(--border)" }}>★</span>
+                  </button>
+                ))}
+              </div>
+              {estrellas > 0 && (
+                <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
+                  {["","Muy malo","Malo","Regular","Aceptable","Bueno","Muy bueno","Excelente"][estrellas]}
+                </p>
+              )}
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>Comentario (opcional)</label>
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>{comentario.length}/200</span>
+              </div>
+              <textarea
+                style={{ ...inputStyle, resize: "none", height: 72 }}
+                value={comentario}
+                onChange={e => setComentario(e.target.value.slice(0, 200))}
+                placeholder="¿Algo que destacar sobre este servicio?"
+              />
+            </div>
+            <button onClick={handleEnviar} disabled={!estrellas || enviando} style={{
+              background: (!estrellas || enviando) ? "var(--border)" : "var(--accent)",
+              color: (!estrellas || enviando) ? "var(--text-muted)" : "#fff",
+              border: "none", borderRadius: 10, padding: 13, fontSize: 14, fontWeight: 600,
+              cursor: (!estrellas || enviando) ? "not-allowed" : "pointer", fontFamily: "inherit",
+            }}>
+              {enviando ? "⟳ Enviando..." : "Enviar valoración"}
+            </button>
+          </div>
+        )}
       </div>
-      <Badge categoriaId={p.categoria} todasCats={todasCats} />
     </div>
-    {p.descripcion && <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.6 }}>{p.descripcion}</p>}
-    <span style={{
-      alignSelf: "flex-start", fontSize: 11, fontWeight: 600,
-      color: p.recomienda ? "var(--accent)" : "var(--warn)",
-      background: p.recomienda ? "var(--accent-light)" : "var(--warn-light)",
-      padding: "2px 8px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4,
-    }}>
-      {p.recomienda ? <><Star size={9} strokeWidth={2} /> Recomendado</> : "👎 No recomendado"}
-    </span>
-  </div>
-);
+  );
+};
+
+// ── Tarjeta servicio ──────────────────────────────────────────────
+const ServicioCard = ({ p, todasCats, condominio }) => {
+  const [modalVal, setModalVal] = useState(false);
+  const [valoraciones, setValoraciones] = useState(null);
+
+  useEffect(() => {
+    query("valoraciones", { filter: `proveedor_id=eq.${p.id}`, select: "estrellas" })
+      .then(data => setValoraciones(Array.isArray(data) ? data : []));
+  }, [p.id]);
+
+  const promedio = valoraciones && valoraciones.length > 0
+    ? (valoraciones.reduce((s, v) => s + v.estrellas, 0) / valoraciones.length).toFixed(1)
+    : null;
+
+  return (
+    <>
+      <div className="fade-up" style={{
+        background: "var(--surface)", border: "1px solid var(--border)",
+        borderRadius: "var(--radius)", padding: "18px 20px",
+        boxShadow: "var(--shadow)", display: "flex", flexDirection: "column", gap: 8,
+        transition: "transform 0.2s, box-shadow 0.2s",
+      }}
+        onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}
+        onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--shadow)"; }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</p>
+            <a href={`tel:${p.telefono.replace(/\s/g, "")}`}
+              onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
+              style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2, display: "flex", alignItems: "center", gap: 4, textDecoration: "none", whiteSpace: "nowrap" }}
+              onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+              onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+            >
+              <Phone size={10} strokeWidth={2} style={{ flexShrink: 0 }} /> {p.telefono}
+            </a>
+          </div>
+          <Badge categoriaId={p.categoria} todasCats={todasCats} />
+        </div>
+        {p.descripcion && <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.6 }}>{p.descripcion}</p>}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 2 }}>
+          <span style={{
+            fontSize: 11, fontWeight: 600,
+            color: p.recomienda ? "var(--accent)" : "var(--warn)",
+            background: p.recomienda ? "var(--accent-light)" : "var(--warn-light)",
+            padding: "2px 8px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4,
+          }}>
+            {p.recomienda ? <><Star size={9} strokeWidth={2} /> Recomendado</> : "👎 No recomendado"}
+          </span>
+          <button onClick={() => setModalVal(true)} style={{
+            background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+            color: promedio ? "var(--gold)" : "var(--text-muted)", fontSize: 11, fontFamily: "inherit", padding: "2px 6px",
+            borderRadius: 6, transition: "background 0.15s",
+          }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--bg)"}
+            onMouseLeave={e => e.currentTarget.style.background = "none"}
+          >
+            <span style={{ fontSize: 13 }}>★</span>
+            {promedio
+              ? <span style={{ fontWeight: 600 }}>{promedio}/7 <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({valoraciones.length})</span></span>
+              : <span>Valorar</span>
+            }
+          </button>
+        </div>
+      </div>
+      {modalVal && <ModalValoracion p={p} todasCats={todasCats} onCerrar={() => setModalVal(false)} />}
+    </>
+  );
+};
 
 // ── Modal Búsqueda ────────────────────────────────────────────────
 const ModalBusqueda = ({ servicios, todasCats, onCerrar, onSeleccionar }) => {
@@ -791,13 +958,33 @@ const Logo1dato = ({ onVolver }) => (
 );
 
 const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
-  const [form, setForm] = useState({ nombre: "", categoria: "", telefono: "", descripcion: "", recomienda: true });
+  const [form, setForm] = useState({ nombre: "", grupo: "", categoria: "", telefonoLocal: "", descripcion: "", recomienda: true });
+  const [telError, setTelError] = useState("");
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [serviciosCount, setServiciosCount] = useState(0);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const cats = todasCats.filter(c => condominio.categorias_activas.includes(c.id));
-  const valido = form.nombre && form.categoria && form.telefono;
+
+  const formatTelefono = (val) => {
+    const digits = val.replace(/\D/g, "").slice(0, 9);
+    if (digits.length <= 1) return digits;
+    if (digits.length <= 5) return digits.slice(0,1) + " " + digits.slice(1);
+    return digits.slice(0,1) + " " + digits.slice(1,5) + " " + digits.slice(5);
+  };
+
+  const handleTelChange = (val) => {
+    const formatted = formatTelefono(val);
+    set("telefonoLocal", formatted);
+    const digits = val.replace(/\D/g, "");
+    if (!digits) { setTelError(""); return; }
+    if (digits.length < 8) setTelError("Mínimo 8 dígitos");
+    else if (digits.length > 9) setTelError("Máximo 9 dígitos");
+    else setTelError("");
+  };
+
+  const telefonoCompleto = form.telefonoLocal ? "+56 " + form.telefonoLocal : "";
+  const valido = form.nombre && form.categoria && form.telefonoLocal && !telError && form.telefonoLocal.replace(/\D/g, "").length >= 8;
 
   useEffect(() => {
     query("proveedores", { filter: `condominio=eq.${condominio.slug}&estado=eq.aprobado`, select: "id" })
@@ -808,13 +995,14 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
     if (!valido) return;
     setEnviando(true);
     await query("proveedores", {
-      insert: { condominio: condominio.slug, nombre: form.nombre, categoria: form.categoria, telefono: form.telefono, descripcion: form.descripcion, recomienda: form.recomienda, estado: "pendiente" },
+      insert: { condominio: condominio.slug, nombre: form.nombre, categoria: form.categoria, telefono: telefonoCompleto, descripcion: form.descripcion, recomienda: form.recomienda, estado: "pendiente" },
     });
     setEnviando(false);
     setEnviado(true);
   };
 
   const gruposConCats = GRUPOS.map(g => ({ ...g, cats: cats.filter(c => c.grupo === g.id) })).filter(g => g.cats.length > 0);
+  const catsDelGrupo = form.grupo ? (gruposConCats.find(g => g.id === form.grupo)?.cats || []) : [];
 
   if (enviado) return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
@@ -843,11 +1031,12 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
       <div style={{
         background: "var(--surface)", borderBottom: "1px solid var(--border)",
         padding: "0 32px", height: 56, display: "flex", alignItems: "center",
-        justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100,
+        gap: 0, position: "sticky", top: 0, zIndex: 100,
       }}>
         <Logo1dato onVolver={onVolver} />
-        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-          <strong style={{ color: "var(--text)" }}>{condominio.nombre}</strong>
+        <div style={{ width: 1, height: 28, background: "var(--border)", margin: "0 16px", flexShrink: 0 }} />
+        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" }}>
+          {condominio.nombre}
         </span>
       </div>
 
@@ -910,18 +1099,42 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
             <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 24 }}>La información será revisada antes de publicarse.</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div><label style={labelStyle}>Nombre o empresa *</label><input style={inputStyle} value={form.nombre} onChange={e => set("nombre", e.target.value)} placeholder="Ej: Carlos Muñoz / Limpieza Total SpA" /></div>
+              {/* Fix 7: Grupo + Categoría en línea */}
               <div>
                 <label style={labelStyle}>Categoría *</label>
-                <select style={{ ...inputStyle, appearance: "none" }} value={form.categoria} onChange={e => set("categoria", e.target.value)}>
-                  <option value="">Seleccionar...</option>
-                  {gruposConCats.map(g => (
-                    <optgroup key={g.id} label={g.label}>
-                      {g.cats.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                    </optgroup>
-                  ))}
-                </select>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <select style={{ ...inputStyle, flex: 1, appearance: "none" }} value={form.grupo}
+                    onChange={e => { set("grupo", e.target.value); set("categoria", ""); }}>
+                    <option value="">Grupo...</option>
+                    {gruposConCats.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+                  </select>
+                  <select style={{ ...inputStyle, flex: 1, appearance: "none" }} value={form.categoria}
+                    onChange={e => set("categoria", e.target.value)} disabled={!form.grupo}>
+                    <option value="">Categoría...</option>
+                    {catsDelGrupo.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                  </select>
+                </div>
               </div>
-              <div><label style={labelStyle}>Teléfono / WhatsApp *</label><input style={inputStyle} value={form.telefono} onChange={e => set("telefono", e.target.value)} placeholder="+56 9 XXXX XXXX" /></div>
+              {/* Fix 2: +56 fijo + campo texto con validación */}
+              <div>
+                <label style={labelStyle}>Teléfono / WhatsApp *</label>
+                <div style={{ display: "flex", gap: 0 }}>
+                  <span style={{
+                    display: "flex", alignItems: "center", padding: "10px 12px",
+                    background: "var(--bg)", border: "1.5px solid var(--border)", borderRight: "none",
+                    borderRadius: "10px 0 0 10px", fontSize: 14, color: "var(--text-muted)", fontWeight: 600, whiteSpace: "nowrap",
+                  }}>+56</span>
+                  <input
+                    style={{ ...inputStyle, borderRadius: "0 10px 10px 0", borderColor: telError ? "var(--warn)" : "var(--border)", flex: 1 }}
+                    value={form.telefonoLocal}
+                    onChange={e => handleTelChange(e.target.value)}
+                    placeholder="9 1234 5678"
+                    inputMode="numeric"
+                  />
+                </div>
+                {telError && <p style={{ fontSize: 11, color: "var(--warn)", marginTop: 5 }}>⚠ {telError}</p>}
+                {!telError && form.telefonoLocal && <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 5 }}>Se guardará como: <strong>{telefonoCompleto}</strong></p>}
+              </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <label style={{ ...labelStyle, marginBottom: 0 }}>Descripción breve</label>
@@ -943,7 +1156,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
               <button onClick={handleEnviar} disabled={!valido || enviando} style={{ marginTop: 4, background: (!valido || enviando) ? "var(--border)" : "var(--accent)", color: (!valido || enviando) ? "var(--text-muted)" : "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600, cursor: (!valido || enviando) ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
                 {enviando ? "⟳ Enviando..." : "Enviar sugerencia"}
               </button>
-              <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6, borderTop: "1px solid var(--border)", paddingTop: 12 }}>
+              <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6, borderTop: "1px solid var(--border)", paddingTop: 12, textAlign: "center" }}>
                 🔒 Los datos serán publicados una vez validados. Para eliminar tu información escribe a <strong>{ADMIN_EMAIL}</strong>
               </p>
             </div>
@@ -1248,7 +1461,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const handleAprobar = async (id) => { await query("proveedores", { update: { where: `id=eq.${id}`, data: { estado: "aprobado" } } }); setServicios(p => p.map(x => x.id === id ? { ...x, estado: "aprobado" } : x)); };
   const handleRechazar = async (id) => { await query("proveedores", { remove: `id=eq.${id}` }); setServicios(p => p.filter(x => x.id !== id)); setConfirmando(null); };
   const handleEditar = async (id, datos) => { await query("proveedores", { update: { where: `id=eq.${id}`, data: datos } }); setServicios(p => p.map(x => x.id === id ? { ...x, ...datos } : x)); setEditandoServicio(null); };
-  const handleGuardarCondominio = async () => { await query("condominios", { update: { where: `slug=eq.${condominioActivo}`, data: { nombre: editando.nombre, colores: editando.colores, categorias_activas: editando.categorias_activas } } }); onActualizarCondominio(editando); setGuardado(true); setTimeout(() => setGuardado(false), 2000); };
+  const handleGuardarCondominio = async () => { await query("condominios", { update: { where: `slug=eq.${condominioActivo}`, data: { nombre: editando.nombre, comuna: editando.comuna || "", colores: editando.colores, categorias_activas: editando.categorias_activas } } }); onActualizarCondominio(editando); setGuardado(true); setTimeout(() => setGuardado(false), 2000); };
   const handleAgregarCategoria = async () => {
     const label = nuevaCat.label.trim();
     if (!label) { setCatError("Escribe un nombre."); return; }
@@ -1575,8 +1788,17 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
               <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 20 }}>Configuración</h1>
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
                 <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "20px 24px" }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 12 }}>🏠 Nombre del condominio</h3>
-                  <input style={inputStyle} value={editando.nombre} onChange={e => setEditando(p => ({ ...p, nombre: e.target.value }))} />
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 12 }}>🏠 Información del condominio</h3>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ flex: 2 }}>
+                      <label style={{ ...labelStyle, color: "#7A7570" }}>Nombre</label>
+                      <input style={inputStyle} value={editando.nombre} onChange={e => setEditando(p => ({ ...p, nombre: e.target.value }))} placeholder="Ej: Terrazas de Chicureo" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ ...labelStyle, color: "#7A7570" }}>Comuna</label>
+                      <input style={inputStyle} value={editando.comuna || ""} onChange={e => setEditando(p => ({ ...p, comuna: e.target.value }))} placeholder="Ej: Colina" />
+                    </div>
+                  </div>
                 </div>
                 <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "20px 24px" }}>
                   <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 4 }}>🎨 Paleta de colores</h3>
@@ -1617,11 +1839,11 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                           )}
                         </div>
                       </div>
-                      <div style={{ flex: 1, minWidth: 140 }}>
+                      <div style={{ flex: 1, minWidth: 110 }}>
                         <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Nombre</label>
-                        <input style={{ ...inputStyle, background: "white" }} placeholder="Ej: Cerrajero, Pintor..." value={nuevaCat.label} onChange={e => { setNuevaCat(p => ({ ...p, label: e.target.value })); setCatError(""); }} onKeyDown={e => e.key === "Enter" && handleAgregarCategoria()} />
+                        <input style={{ ...inputStyle, background: "white" }} placeholder="Ej: Cerrajero..." value={nuevaCat.label} onChange={e => { setNuevaCat(p => ({ ...p, label: e.target.value })); setCatError(""); }} onKeyDown={e => e.key === "Enter" && handleAgregarCategoria()} />
                       </div>
-                      <div style={{ minWidth: 130 }}>
+                      <div style={{ flex: 1, minWidth: 110 }}>
                         <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Grupo</label>
                         <select value={nuevaCat.grupo} onChange={e => setNuevaCat(p => ({ ...p, grupo: e.target.value }))} style={{ ...inputStyle, appearance: "none", background: "white" }}>
                           {GRUPOS.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
@@ -1681,8 +1903,14 @@ export default function App() {
   const [condominios, setCondominios] = useState([]);
   const [todasCats, setTodasCats] = useState(TODAS_CATEGORIAS);
   const [cargandoApp, setCargandoApp] = useState(true);
-  const [adminToken, setAdminToken] = useState(null);
+  const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem("1dato_admin_token") || null);
   const [vistaApp, setVistaApp] = useState("publica");
+
+  const handleSetAdminToken = (token) => {
+    if (token) sessionStorage.setItem("1dato_admin_token", token);
+    else sessionStorage.removeItem("1dato_admin_token");
+    setAdminToken(token);
+  };
 
   const path = window.location.pathname.replace(/^\//, "").replace(/\/$/, "");
   const esAdmin = path === "admin";
@@ -1698,7 +1926,7 @@ export default function App() {
   }, []);
 
   const handleActualizarCondominio = (datos) => setCondominios(prev => prev.map(c => c.slug === datos.slug ? datos : c));
-  const handleLogout = async () => { if (adminToken) await authLogout(adminToken); setAdminToken(null); };
+  const handleLogout = async () => { if (adminToken) await authLogout(adminToken); handleSetAdminToken(null); };
 
   if (cargandoApp) return <><style>{defaultCSS}</style><Cargando mensaje="Iniciando 1dato..." /></>;
 
@@ -1708,7 +1936,7 @@ export default function App() {
     return (
       <>
         <style>{adminCSS}</style>
-        {!adminToken ? <LoginAdmin onLogin={setAdminToken} /> : <PanelAdmin condominios={condominios} todasCats={todasCats} setTodasCats={setTodasCats} onActualizarCondominio={handleActualizarCondominio} onLogout={handleLogout} />}
+        {!adminToken ? <LoginAdmin onLogin={handleSetAdminToken} /> : <PanelAdmin condominios={condominios} todasCats={todasCats} setTodasCats={setTodasCats} onActualizarCondominio={handleActualizarCondominio} onLogout={handleLogout} />}
       </>
     );
   }
