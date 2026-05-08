@@ -216,7 +216,7 @@ const yaValoro = (proveedorId) => !!getCookieVal()[proveedorId];
 const marcarValorado = (proveedorId) => { const v = getCookieVal(); v[proveedorId] = true; setCookieVal(v); };
 
 // ── Modal Valoración ──────────────────────────────────────────────
-const ModalValoracion = ({ p, todasCats, onCerrar }) => {
+const ModalValoracion = ({ p, todasCats, onCerrar, onValorado }) => {
   const [estrellas, setEstrellas] = useState(0);
   const [hover, setHover] = useState(0);
   const [comentario, setComentario] = useState("");
@@ -224,7 +224,8 @@ const ModalValoracion = ({ p, todasCats, onCerrar }) => {
   const [enviado, setEnviado] = useState(false);
   const [valoraciones, setValoraciones] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const yaVoto = yaValoro(p.id);
+  // Bug 1 fix: evaluar yaVoto una sola vez al montar, no en cada render
+  const [yaVoto] = useState(() => yaValoro(p.id));
 
   useEffect(() => {
     query("valoraciones", { filter: `proveedor_id=eq.${p.id}` })
@@ -236,12 +237,14 @@ const ModalValoracion = ({ p, todasCats, onCerrar }) => {
     : null;
 
   const handleEnviar = async () => {
-    if (!estrellas) return;
+    if (!estrellas || enviando) return;
     setEnviando(true);
     await query("valoraciones", { insert: { proveedor_id: p.id, estrellas, comentario: comentario.trim() || null } });
     marcarValorado(p.id);
     setEnviado(true);
     setEnviando(false);
+    // Bug 2 fix: notificar a la tarjeta para que recargue sus valoraciones
+    if (onValorado) onValorado();
   };
 
   return (
@@ -347,10 +350,12 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
   const [modalVal, setModalVal] = useState(false);
   const [valoraciones, setValoraciones] = useState(null);
 
-  useEffect(() => {
+  const cargarValoraciones = () => {
     query("valoraciones", { filter: `proveedor_id=eq.${p.id}`, select: "estrellas" })
       .then(data => setValoraciones(Array.isArray(data) ? data : []));
-  }, [p.id]);
+  };
+
+  useEffect(() => { cargarValoraciones(); }, [p.id]);
 
   const promedio = valoraciones && valoraciones.length > 0
     ? (valoraciones.reduce((s, v) => s + v.estrellas, 0) / valoraciones.length).toFixed(1)
@@ -407,7 +412,7 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
           </button>
         </div>
       </div>
-      {modalVal && <ModalValoracion p={p} todasCats={todasCats} onCerrar={() => setModalVal(false)} />}
+      {modalVal && <ModalValoracion p={p} todasCats={todasCats} onCerrar={() => setModalVal(false)} onValorado={cargarValoraciones} />}
     </>
   );
 };
@@ -645,9 +650,11 @@ const Hero = ({ condominio, onNavegar }) => (
     <div style={{ position: "absolute", bottom: 40, right: 100, width: 200, height: 200, borderRadius: "50%", background: "var(--accent)", opacity: 0.04, pointerEvents: "none" }} />
 
     <div className="fade-up" style={{ position: "relative", zIndex: 1, maxWidth: 600 }}>
-      <p style={{ fontSize: 16, fontWeight: 600, color: "var(--accent)", marginBottom: 16, fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.01em" }}>
-        {condominio.nombre}
-      </p>
+      <div style={{ marginBottom: 16 }}>
+        <p style={{ fontSize: 16, fontWeight: 600, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.01em" }}>
+          {condominio.nombre}{condominio.comuna ? <span style={{ fontWeight: 400, opacity: 0.75 }}> · {condominio.comuna}</span> : null}
+        </p>
+      </div>
       <h1 className="serif" style={{ fontSize: 54, lineHeight: 1.12, marginBottom: 20, color: "var(--text)" }}>
         Cuando un vecino tiene<br />el dato, todos ganan
       </h1>
@@ -1428,7 +1435,11 @@ const SeccionServicios = ({ servicios, pendientes, aprobados, todasCats, cargand
 // ── Panel Admin ───────────────────────────────────────────────────
 const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondominio, onLogout }) => {
   const [condominioActivo, setCondominioActivo] = useState(condominios[0]?.slug || "");
-  const [seccion, setSeccion] = useState("dashboard");
+  const [seccion, setSeccion] = useState("condominios");
+  const [nuevoCondominio, setNuevoCondominio] = useState(null); // null | "form"
+  const [formCond, setFormCond] = useState({ nombre: "", comuna: "", paleta: 0 });
+  const [guardandoCond, setGuardandoCond] = useState(false);
+  const [resumenCondominios, setResumenCondominios] = useState({});
   const [servicios, setServicios] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [editando, setEditando] = useState(null);
@@ -1479,6 +1490,48 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
     setNuevaCat({ label: "", emoji: "🏠", grupo: "hogar" }); setCatError(""); setMostrarEmojis(false);
   };
   const handleEliminarCategoria = async (id) => { await query("categorias_custom", { remove: `id=eq.${id}` }); setTodasCats(prev => prev.filter(c => c.id !== id)); setEditando(prev => ({ ...prev, categorias_activas: prev.categorias_activas.filter(c => c !== id) })); setConfirmando(null); };
+
+  // Cargar resumen de servicios por condominio (para vista Condominios)
+  useEffect(() => {
+    const cargarResumen = async () => {
+      const todos = await query("proveedores", { select: "condominio,estado" });
+      if (!Array.isArray(todos)) return;
+      const res = {};
+      todos.forEach(p => {
+        if (!res[p.condominio]) res[p.condominio] = { aprobados: 0, pendientes: 0 };
+        if (p.estado === "aprobado") res[p.condominio].aprobados++;
+        if (p.estado === "pendiente") res[p.condominio].pendientes++;
+      });
+      setResumenCondominios(res);
+    };
+    cargarResumen();
+  }, [condominios]);
+
+  const handleCrearCondominio = async () => {
+    if (!formCond.nombre.trim()) return;
+    setGuardandoCond(true);
+    const slug = formCond.nombre.toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "")
+      .replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+    const paleta = PALETAS[formCond.paleta];
+    const nuevoCond = {
+      slug,
+      nombre: formCond.nombre.trim(),
+      comuna: formCond.comuna.trim(),
+      colores: { accent: paleta.accent, accentLight: paleta.accentLight, bg: paleta.bg, surface: paleta.surface, border: paleta.border },
+      categorias_activas: TODAS_CATEGORIAS.map(c => c.id),
+    };
+    await query("condominios", { insert: nuevoCond });
+    onActualizarCondominio(nuevoCond);
+    // Recargar condominios
+    const conds = await query("condominios");
+    if (Array.isArray(conds)) conds.forEach(c => onActualizarCondominio(c));
+    setNuevoCondominio(null);
+    setFormCond({ nombre: "", comuna: "", paleta: 0 });
+    setGuardandoCond(false);
+    setCondominioActivo(slug);
+    setSeccion("dashboard");
+  };
 
   if (!editando) return <Cargando />;
 
@@ -1611,6 +1664,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           {/* Nav */}
           <div style={{ flex: 1, padding: "12px 0" }}>
             <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", padding: "0 16px 8px" }}>Menú</p>
+            <SideLink id="condominios" icon="🏘️" label="Condominios" badge={condominios.length} />
             <SideLink id="dashboard" icon="📊" label="Dashboard" />
             <SideLink id="servicios" icon="📋" label="Servicios" badge={pendientes.length} />
             <SideLink id="carga_masiva" icon="📥" label="Carga Masiva" />
@@ -1628,6 +1682,122 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
 
         {/* Contenido */}
         <div style={{ flex: 1, padding: "28px 32px", overflowY: "auto" }}>
+
+
+          {/* ── CONDOMINIOS ── */}
+          {seccion === "condominios" && (
+            <div className="fade-up">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                <div>
+                  <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 4 }}>Condominios</h1>
+                  <p style={{ fontSize: 13, color: "#7A7570" }}>{condominios.length} condominio{condominios.length !== 1 ? "s" : ""} registrado{condominios.length !== 1 ? "s" : ""}</p>
+                </div>
+                <button onClick={() => setNuevoCondominio("form")} style={{
+                  background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10,
+                  padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+                  fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8,
+                }}>
+                  <span style={{ fontSize: 16 }}>+</span> Nuevo condominio
+                </button>
+              </div>
+
+              {/* Tarjetas de condominios */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, marginBottom: 24 }}>
+                {condominios.map(c => {
+                  const res = resumenCondominios[c.slug] || { aprobados: 0, pendientes: 0 };
+                  const isActivo = condominioActivo === c.slug;
+                  return (
+                    <div key={c.slug} style={{
+                      background: "white", border: `2px solid ${isActivo ? "#2D6A4F" : "#E2DDD4"}`,
+                      borderRadius: 14, padding: "20px 22px", boxShadow: "0 2px 12px rgba(28,26,22,0.06)",
+                      transition: "box-shadow 0.15s, border-color 0.15s", cursor: "pointer",
+                    }}
+                      onClick={() => { setCondominioActivo(c.slug); setSeccion("dashboard"); }}
+                      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 24px rgba(28,26,22,0.12)"; if (!isActivo) e.currentTarget.style.borderColor = "#B8DDC8"; }}
+                      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(28,26,22,0.06)"; e.currentTarget.style.borderColor = isActivo ? "#2D6A4F" : "#E2DDD4"; }}
+                    >
+                      {/* Color dot + nombre */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                        <div style={{ width: 12, height: 12, borderRadius: "50%", background: c.colores?.accent || "#2D6A4F", flexShrink: 0 }} />
+                        <p style={{ fontWeight: 600, fontSize: 14, color: "#1A3F2F" }}>{c.nombre}</p>
+                        {isActivo && <span style={{ marginLeft: "auto", fontSize: 10, background: "#D8EFE4", color: "#2D6A4F", padding: "2px 8px", borderRadius: 999, fontWeight: 700 }}>Activo</span>}
+                      </div>
+                      {/* Comuna */}
+                      {c.comuna && <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 12 }}>📍 {c.comuna}</p>}
+                      {/* Stats */}
+                      <div style={{ display: "flex", gap: 10, borderTop: "1px solid #F0EDE8", paddingTop: 12 }}>
+                        <div style={{ flex: 1, textAlign: "center" }}>
+                          <p style={{ fontSize: 20, fontWeight: 700, color: "#2D6A4F", fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{res.aprobados}</p>
+                          <p style={{ fontSize: 10, color: "#7A7570", marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Aprobados</p>
+                        </div>
+                        <div style={{ width: 1, background: "#F0EDE8" }} />
+                        <div style={{ flex: 1, textAlign: "center" }}>
+                          <p style={{ fontSize: 20, fontWeight: 700, color: res.pendientes > 0 ? "#8B6914" : "#B0ABA6", fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{res.pendientes}</p>
+                          <p style={{ fontSize: 10, color: "#7A7570", marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Pendientes</p>
+                        </div>
+                        <div style={{ width: 1, background: "#F0EDE8" }} />
+                        <div style={{ flex: 1, textAlign: "center" }}>
+                          <p style={{ fontSize: 20, fontWeight: 700, color: "#4A4540", fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{res.aprobados + res.pendientes}</p>
+                          <p style={{ fontSize: 10, color: "#7A7570", marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Total</p>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: 11, color: "#B8DDC8", marginTop: 10, textAlign: "right" }}>/{c.slug}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* ── MODAL NUEVO CONDOMINIO ── */}
+          {nuevoCondominio === "form" && (
+            <div style={{ position: "fixed", inset: 0, background: "rgba(28,26,22,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 400, padding: 24 }}>
+              <div className="fade-up" style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 16, padding: "28px 32px", width: "100%", maxWidth: 460, boxShadow: "0 20px 60px rgba(28,26,22,0.2)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                  <h3 className="serif" style={{ fontSize: 22, color: "#1A3F2F" }}>Nuevo condominio</h3>
+                  <button onClick={() => setNuevoCondominio(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "#7A7570", fontSize: 18 }}>✕</button>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                  <div style={{ display: "flex", gap: 12 }}>
+                    <div style={{ flex: 2 }}>
+                      <label style={labelStyle}>Nombre *</label>
+                      <input style={inputStyle} value={formCond.nombre} onChange={e => setFormCond(f => ({ ...f, nombre: e.target.value }))} placeholder="Ej: Las Acacias" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={labelStyle}>Comuna</label>
+                      <input style={inputStyle} value={formCond.comuna} onChange={e => setFormCond(f => ({ ...f, comuna: e.target.value }))} placeholder="Ej: Colina" />
+                    </div>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>Paleta de colores</label>
+                    <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                      {PALETAS.map((p, i) => (
+                        <button key={p.nombre} onClick={() => setFormCond(f => ({ ...f, paleta: i }))} style={{
+                          border: `2px solid ${formCond.paleta === i ? p.accent : "#E2DDD4"}`,
+                          borderRadius: 10, padding: "8px 12px", cursor: "pointer", background: formCond.paleta === i ? p.accentLight : "#F5F2EC",
+                          display: "flex", alignItems: "center", gap: 8, fontFamily: "inherit",
+                        }}>
+                          <div style={{ width: 16, height: 16, borderRadius: "50%", background: p.accent }} />
+                          <span style={{ fontSize: 12, fontWeight: 600, color: formCond.paleta === i ? p.accent : "#7A7570" }}>{p.nombre}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {formCond.nombre && (
+                    <p style={{ fontSize: 11, color: "#7A7570", background: "#F5F2EC", padding: "8px 12px", borderRadius: 8 }}>
+                      URL: <strong>/{formCond.nombre.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")}</strong>
+                    </p>
+                  )}
+                  <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                    <button onClick={() => setNuevoCondominio(null)} style={{ flex: 1, background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#7A7570" }}>Cancelar</button>
+                    <button onClick={handleCrearCondominio} disabled={!formCond.nombre.trim() || guardandoCond} style={{ flex: 2, background: (!formCond.nombre.trim() || guardandoCond) ? "#E2DDD4" : "#2D6A4F", color: (!formCond.nombre.trim() || guardandoCond) ? "#7A7570" : "#fff", border: "none", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: (!formCond.nombre.trim() || guardandoCond) ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+                      {guardandoCond ? "⟳ Creando..." : "Crear condominio"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* ── DASHBOARD ── */}
           {seccion === "dashboard" && (
