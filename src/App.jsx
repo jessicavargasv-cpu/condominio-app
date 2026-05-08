@@ -253,9 +253,11 @@ const ModalBusqueda = ({ servicios, todasCats, onCerrar, onSeleccionar }) => {
   useEffect(() => { inputRef.current?.focus(); }, []);
 
   const resultados = q.trim().length < 2 ? [] : servicios.filter(p =>
-    p.nombre.toLowerCase().includes(q.toLowerCase()) ||
-    p.descripcion?.toLowerCase().includes(q.toLowerCase()) ||
-    todasCats.find(c => c.id === p.categoria)?.label.toLowerCase().includes(q.toLowerCase())
+    p.estado === "aprobado" && (
+      p.nombre.toLowerCase().includes(q.toLowerCase()) ||
+      p.descripcion?.toLowerCase().includes(q.toLowerCase()) ||
+      todasCats.find(c => c.id === p.categoria)?.label.toLowerCase().includes(q.toLowerCase())
+    )
   ).slice(0, 8);
 
   return (
@@ -465,13 +467,12 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
 // ── Hero ──────────────────────────────────────────────────────────
 const Hero = ({ condominio, onNavegar }) => (
   <div style={{
-    background: "linear-gradient(135deg, #ffffff 0%, #e8f5ee 60%, #c8e8d8 100%)",
+    background: "linear-gradient(135deg, var(--surface) 0%, var(--accent-light) 60%, var(--accent-light) 100%)",
     minHeight: "calc(100vh - 56px)",
     display: "flex", alignItems: "center", justifyContent: "center",
     textAlign: "center", position: "relative", overflow: "hidden",
     padding: "40px 32px",
   }}>
-    {/* Manchas aurora suaves */}
     <div style={{ position: "absolute", top: -80, right: -100, width: 500, height: 400, borderRadius: "50%", background: "var(--accent)", opacity: 0.06, pointerEvents: "none" }} />
     <div style={{ position: "absolute", bottom: -60, left: -80, width: 400, height: 300, borderRadius: "50%", background: "var(--accent)", opacity: 0.05, pointerEvents: "none" }} />
     <div style={{ position: "absolute", bottom: 40, right: 100, width: 200, height: 200, borderRadius: "50%", background: "var(--accent)", opacity: 0.04, pointerEvents: "none" }} />
@@ -480,10 +481,10 @@ const Hero = ({ condominio, onNavegar }) => (
       <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 16 }}>
         {condominio.nombre}
       </p>
-      <h1 className="serif" style={{ fontSize: 54, lineHeight: 1.12, marginBottom: 20, color: "#1A3F2F" }}>
+      <h1 className="serif" style={{ fontSize: 54, lineHeight: 1.12, marginBottom: 20, color: "var(--text)" }}>
         Cuando un vecino tiene<br />el dato, todos ganan
       </h1>
-      <p style={{ fontSize: 17, color: "#4A7C6F", lineHeight: 1.65, maxWidth: 440, margin: "0 auto 36px" }}>
+      <p style={{ fontSize: 17, color: "var(--text-muted)", lineHeight: 1.65, maxWidth: 440, margin: "0 auto 36px" }}>
         El directorio de servicios que recomiendan tus propios vecinos.
       </p>
       <button onClick={() => onNavegar("servicios")} style={{
@@ -582,9 +583,6 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
     return serviciosAprobados.filter(s => cats.some(c => c.id === s.categoria)).length;
   };
 
-  // Contar servicios por categoría
-  const contarCat = (catId) => serviciosAprobados.filter(s => s.categoria === catId).length;
-
   // Servicios del grupo activo, por categoría
   const grupoActualObj = gruposConCats.find(g => g.id === grupoActivo);
   const catsDelGrupo = grupoActualObj?.cats || [];
@@ -662,6 +660,7 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
                   const abierto = acordeonesAbiertos[cat.id] ?? false;
                   const serviciosCat = serviciosAprobados.filter(s => s.categoria === cat.id);
                   const total = serviciosCat.length;
+                  if (total === 0) return null;
                   return (
                     <div key={cat.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", overflow: "hidden", boxShadow: "var(--shadow)" }}>
                       {/* Header acordeón */}
@@ -772,6 +771,25 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
 };
 
 // ── Formulario Sugerir Servicio ───────────────────────────────────
+const Logo1dato = ({ onVolver }) => (
+  <button onClick={onVolver} style={{
+    background: "none", border: "none", cursor: "pointer", padding: 0,
+    display: "flex", alignItems: "center", gap: 8,
+  }}>
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+      <rect width="28" height="28" rx="7" fill="var(--accent)"/>
+      <circle cx="9" cy="14" r="2.2" fill="white"/>
+      <circle cx="14" cy="14" r="2.2" fill="white"/>
+      <circle cx="19" cy="14" r="2.2" fill="white"/>
+      <path d="M6 19 L6 22 L10 19" fill="var(--accent)"/>
+    </svg>
+    <span style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+      <span style={{ fontSize: 17, fontWeight: 700, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.5px" }}>1</span>
+      <span style={{ fontSize: 17, fontWeight: 300, color: "var(--text)", fontFamily: "'DM Sans', sans-serif" }}>dato</span>
+    </span>
+  </button>
+);
+
 const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
   const [form, setForm] = useState({ nombre: "", categoria: "", telefono: "", descripcion: "", recomienda: true });
   const [enviado, setEnviado] = useState(false);
@@ -809,9 +827,10 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
           <p style={{ color: "var(--text-muted)", lineHeight: 1.6, fontSize: 14 }}>
             Un administrador de <strong>{condominio.nombre}</strong> revisará la información antes de publicarla.
           </p>
-          <button onClick={onVolver} style={{ marginTop: 24, background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, padding: "12px 28px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-            Volver al directorio
-          </button>
+          <div style={{ marginTop: 28, display: "flex", justifyContent: "center" }}>
+            <Logo1dato onVolver={onVolver} />
+          </div>
+          <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 8 }}>Volver al directorio</p>
         </div>
       </div>
       <Footer />
@@ -819,9 +838,19 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
   );
 
   return (
-    <div style={{ minHeight: "calc(100vh - 56px)", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+      {/* Barra superior mínima */}
+      <div style={{
+        background: "var(--surface)", borderBottom: "1px solid var(--border)",
+        padding: "0 32px", height: 56, display: "flex", alignItems: "center",
+        justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100,
+      }}>
+        <Logo1dato onVolver={onVolver} />
+        <span style={{ fontSize: 12, color: "var(--text-muted)" }}>{condominio.nombre}</span>
+      </div>
+
       <div style={{ flex: 1, padding: "32px", display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 24, maxWidth: 900, margin: "0 auto", width: "100%", flex: 1, alignItems: "stretch" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 24, maxWidth: 1100, margin: "0 auto", width: "100%", flex: 1, alignItems: "stretch" }}>
 
           {/* Columna izquierda — motivacional */}
           <div style={{
@@ -928,6 +957,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
 const LoginAdmin = ({ onLogin }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [verPassword, setVerPassword] = useState(false);
   const [error, setError] = useState("");
   const [cargando, setCargando] = useState(false);
 
@@ -941,26 +971,58 @@ const LoginAdmin = ({ onLogin }) => {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ width: "100%", maxWidth: 400 }} className="fade-up">
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "36px 32px", boxShadow: "var(--shadow)" }}>
           <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <div style={{ width: 52, height: 52, borderRadius: "50%", background: "var(--accent-light)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
-              <Shield size={22} color="var(--accent)" strokeWidth={1.75} />
+            {/* Logo 1dato */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
+              <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
+                <rect width="28" height="28" rx="7" fill="#2D6A4F"/>
+                <circle cx="9" cy="14" r="2.2" fill="white"/>
+                <circle cx="14" cy="14" r="2.2" fill="white"/>
+                <circle cx="19" cy="14" r="2.2" fill="white"/>
+                <path d="M6 19 L6 22 L10 19" fill="#2D6A4F"/>
+              </svg>
+              <span style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+                <span style={{ fontSize: 22, fontWeight: 700, color: "#2D6A4F", fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.5px" }}>1</span>
+                <span style={{ fontSize: 22, fontWeight: 300, color: "#1C1A16", fontFamily: "'DM Sans', sans-serif" }}>dato</span>
+              </span>
             </div>
-            <h2 className="serif" style={{ fontSize: 26 }}>Panel Administrador</h2>
+            <h2 className="serif" style={{ fontSize: 24 }}>Panel Administrador</h2>
             <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 6 }}>Acceso restringido</p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="admin@ejemplo.com" onKeyDown={e => e.key === "Enter" && handleLogin()} /></div>
-            <div><label style={labelStyle}>Contraseña</label><input style={inputStyle} type="password" value={password} onChange={e => { setPassword(e.target.value); setError(""); }} placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleLogin()} /></div>
+            <div>
+              <label style={labelStyle}>Contraseña</label>
+              <div style={{ position: "relative" }}>
+                <input
+                  style={{ ...inputStyle, paddingRight: 44 }}
+                  type={verPassword ? "text" : "password"}
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setError(""); }}
+                  placeholder="••••••••"
+                  onKeyDown={e => e.key === "Enter" && handleLogin()}
+                />
+                <button
+                  onClick={() => setVerPassword(v => !v)}
+                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 13, fontFamily: "inherit", padding: 2 }}
+                >
+                  {verPassword ? "Ocultar" : "Ver"}
+                </button>
+              </div>
+            </div>
             {error && <p style={{ fontSize: 13, color: "var(--warn)", background: "var(--warn-light)", padding: "8px 12px", borderRadius: 8 }}>⚠ {error}</p>}
-            <button onClick={handleLogin} disabled={cargando} style={{ marginTop: 4, background: cargando ? "var(--border)" : "var(--accent)", color: cargando ? "var(--text-muted)" : "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600, cursor: cargando ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+            <button onClick={handleLogin} disabled={cargando} style={{ marginTop: 4, background: cargando ? "var(--border)" : "#2D6A4F", color: cargando ? "var(--text-muted)" : "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600, cursor: cargando ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
               {cargando ? "⟳ Verificando..." : "Ingresar"}
             </button>
           </div>
         </div>
       </div>
+      <p style={{ marginTop: 24, fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>
+        Copyright © 2026 <strong style={{ color: "var(--text)" }}>1dato</strong> | Todos los derechos reservados
+      </p>
     </div>
   );
 };
@@ -1047,6 +1109,107 @@ const CargaMasiva = ({ condominios, todasCats }) => {
   );
 };
 
+// ── Sección Servicios Admin ───────────────────────────────────────
+const SeccionServicios = ({ servicios, pendientes, aprobados, todasCats, cargando, onAprobar, onConfirmar, onEditar }) => {
+  const [tabActiva, setTabActiva] = useState("todos");
+  const [busqueda, setBusqueda] = useState("");
+
+  const rechazados = servicios.filter(p => p.estado === "rechazado");
+  const porTab = { todos: servicios, pendientes, aprobados, rechazados };
+
+  const filtrados = (porTab[tabActiva] || []).filter(p => {
+    if (!busqueda.trim()) return true;
+    const q = busqueda.toLowerCase();
+    return p.nombre.toLowerCase().includes(q) ||
+      todasCats.find(c => c.id === p.categoria)?.label.toLowerCase().includes(q);
+  });
+
+  const tabs = [
+    { id: "todos", label: "Todos", count: servicios.length },
+    { id: "pendientes", label: "Pendientes", count: pendientes.length },
+    { id: "aprobados", label: "Aprobados", count: aprobados.length },
+    { id: "rechazados", label: "Rechazados", count: rechazados.length },
+  ];
+
+  const FilaServicioAdmin = ({ p }) => {
+    const esPendiente = p.estado === "pendiente";
+    return (
+      <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 12, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</span>
+            <Badge categoriaId={p.categoria} todasCats={todasCats} />
+            <span style={{ fontSize: 12, color: p.recomienda ? "#2D6A4F" : "#C0392B", fontWeight: 600 }}>{p.recomienda ? "👍" : "👎"}</span>
+            {p.estado === "rechazado" && <span style={{ fontSize: 11, background: "#FDECEA", color: "#C0392B", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>Rechazado</span>}
+          </div>
+          <p style={{ fontSize: 12, color: "#7A7570" }}>📞 {p.telefono}</p>
+          {p.descripcion && <p style={{ fontSize: 12, marginTop: 4, color: "#4A4540" }}>{p.descripcion}</p>}
+        </div>
+        <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+          {esPendiente && <button onClick={() => onAprobar(p.id)} style={{ background: "#D8EFE4", color: "#2D6A4F", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✓ Aprobar</button>}
+          <button onClick={() => onEditar({ ...p })} style={{ background: "#FDF3DC", color: "#8B6914", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✏️ Editar</button>
+          <button onClick={() => onConfirmar({ tipo: esPendiente ? "rechazar" : "eliminar", id: p.id, nombre: p.nombre })} style={{ background: "#FDECEA", color: "#C0392B", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+            {esPendiente ? "✕ Rechazar" : "🗑 Eliminar"}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="fade-up">
+      <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 16 }}>Servicios</h1>
+
+      {/* Pestañas */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, borderBottom: "1px solid #E2DDD4" }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTabActiva(t.id)} style={{
+            background: "none", border: "none", borderBottom: `2px solid ${tabActiva === t.id ? "#2D6A4F" : "transparent"}`,
+            padding: "8px 14px", fontSize: 13, fontWeight: tabActiva === t.id ? 600 : 400,
+            color: tabActiva === t.id ? "#2D6A4F" : "#7A7570", cursor: "pointer",
+            fontFamily: "inherit", marginBottom: -1, display: "flex", alignItems: "center", gap: 6,
+          }}>
+            {t.label}
+            {t.count > 0 && (
+              <span style={{ background: tabActiva === t.id ? "#D8EFE4" : "#F0EDE8", color: tabActiva === t.id ? "#2D6A4F" : "#7A7570", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 999 }}>
+                {t.count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Búsqueda */}
+      <div style={{ position: "relative", marginBottom: 16 }}>
+        <Search size={15} color="#7A7570" strokeWidth={2} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
+        <input
+          value={busqueda}
+          onChange={e => setBusqueda(e.target.value)}
+          placeholder="Buscar por nombre o categoría..."
+          style={{ width: "100%", padding: "10px 14px 10px 36px", border: "1.5px solid #E2DDD4", borderRadius: 10, fontSize: 13, background: "white", color: "#1C1A16", outline: "none", fontFamily: "inherit" }}
+        />
+        {busqueda && (
+          <button onClick={() => setBusqueda("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#7A7570", display: "flex" }}>
+            <X size={14} strokeWidth={2} />
+          </button>
+        )}
+      </div>
+
+      {cargando ? <Cargando /> : (
+        filtrados.length === 0 ? (
+          <p style={{ color: "#7A7570", fontSize: 14, padding: "24px 0" }}>
+            {busqueda ? `Sin resultados para "${busqueda}"` : "Sin servicios en esta pestaña."}
+          </p>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {filtrados.map(p => <FilaServicioAdmin key={p.id} p={p} />)}
+          </div>
+        )
+      )}
+    </div>
+  );
+};
+
 // ── Panel Admin ───────────────────────────────────────────────────
 const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondominio, onLogout }) => {
   const [condominioActivo, setCondominioActivo] = useState(condominios[0]?.slug || "");
@@ -1060,6 +1223,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const [mostrarEmojis, setMostrarEmojis] = useState(false);
   const [editandoServicio, setEditandoServicio] = useState(null);
   const [eventos, setEventos] = useState([]);
+  const [confirmando, setConfirmando] = useState(null); // { tipo, id, nombre }
 
   const cond = condominios.find(c => c.slug === condominioActivo);
 
@@ -1080,7 +1244,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   }, [condominioActivo]);
 
   const handleAprobar = async (id) => { await query("proveedores", { update: { where: `id=eq.${id}`, data: { estado: "aprobado" } } }); setServicios(p => p.map(x => x.id === id ? { ...x, estado: "aprobado" } : x)); };
-  const handleRechazar = async (id) => { await query("proveedores", { remove: `id=eq.${id}` }); setServicios(p => p.filter(x => x.id !== id)); };
+  const handleRechazar = async (id) => { await query("proveedores", { remove: `id=eq.${id}` }); setServicios(p => p.filter(x => x.id !== id)); setConfirmando(null); };
   const handleEditar = async (id, datos) => { await query("proveedores", { update: { where: `id=eq.${id}`, data: datos } }); setServicios(p => p.map(x => x.id === id ? { ...x, ...datos } : x)); setEditandoServicio(null); };
   const handleGuardarCondominio = async () => { await query("condominios", { update: { where: `slug=eq.${condominioActivo}`, data: { nombre: editando.nombre, colores: editando.colores, categorias_activas: editando.categorias_activas } } }); onActualizarCondominio(editando); setGuardado(true); setTimeout(() => setGuardado(false), 2000); };
   const handleAgregarCategoria = async () => {
@@ -1099,7 +1263,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
     onActualizarCondominio(nuevoEditando);
     setNuevaCat({ label: "", emoji: "🏠", grupo: "hogar" }); setCatError(""); setMostrarEmojis(false);
   };
-  const handleEliminarCategoria = async (id) => { await query("categorias_custom", { remove: `id=eq.${id}` }); setTodasCats(prev => prev.filter(c => c.id !== id)); setEditando(prev => ({ ...prev, categorias_activas: prev.categorias_activas.filter(c => c !== id) })); };
+  const handleEliminarCategoria = async (id) => { await query("categorias_custom", { remove: `id=eq.${id}` }); setTodasCats(prev => prev.filter(c => c.id !== id)); setEditando(prev => ({ ...prev, categorias_activas: prev.categorias_activas.filter(c => c !== id) })); setConfirmando(null); };
 
   if (!editando) return <Cargando />;
 
@@ -1110,17 +1274,20 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   // Estadísticas de eventos
   const hace7dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const eventosRecientes = eventos.filter(e => e.created_at >= hace7dias);
-  const vistas = eventos.filter(e => e.tipo === "vista");
-  const contactos = eventos.filter(e => e.tipo === "contacto");
-  const tasaContacto = vistas.length > 0 ? Math.round((contactos.length / vistas.length) * 100) : 0;
+  const vistas7d = eventosRecientes.filter(e => e.tipo === "vista");
+  const contactos7d = eventosRecientes.filter(e => e.tipo === "contacto");
+  const tasaContacto7d = vistas7d.length > 0 ? Math.round((contactos7d.length / vistas7d.length) * 100) : 0;
+
+  const vistasTotal = eventos.filter(e => e.tipo === "vista");
+  const contactosTotal = eventos.filter(e => e.tipo === "contacto");
 
   const contarPorProveedor = (evs) => {
     const counts = {};
     evs.forEach(e => { counts[e.proveedor_id] = (counts[e.proveedor_id] || 0) + 1; });
     return counts;
   };
-  const vistasPorProv = contarPorProveedor(vistas);
-  const contactosPorProv = contarPorProveedor(contactos);
+  const vistasPorProv = contarPorProveedor(vistasTotal);
+  const contactosPorProv = contarPorProveedor(contactosTotal);
   const masVisto = Object.entries(vistasPorProv).sort((a, b) => b[1] - a[1])[0];
   const masContactado = Object.entries(contactosPorProv).sort((a, b) => b[1] - a[1])[0];
   const masVistoSvc = masVisto ? servicios.find(s => s.id === parseInt(masVisto[0])) : null;
@@ -1162,25 +1329,6 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
       <span style={{ flex: 1 }}>{label}</span>
       {badge > 0 && <span style={{ background: "#FDF3DC", color: "#8B6914", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 999 }}>{badge}</span>}
     </button>
-  );
-
-  const FilaServicio = ({ p, esPendiente }) => (
-    <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 12, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 4 }}>
-          <span style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</span>
-          <Badge categoriaId={p.categoria} todasCats={todasCats} />
-          <span style={{ fontSize: 12, color: p.recomienda ? "#2D6A4F" : "#C0392B", fontWeight: 600 }}>{p.recomienda ? "👍" : "👎"}</span>
-        </div>
-        <p style={{ fontSize: 12, color: "#7A7570" }}>📞 {p.telefono}</p>
-        {p.descripcion && <p style={{ fontSize: 12, marginTop: 4, color: "#4A4540" }}>{p.descripcion}</p>}
-      </div>
-      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-        {esPendiente && <button onClick={() => handleAprobar(p.id)} style={{ background: "#D8EFE4", color: "#2D6A4F", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✓ Aprobar</button>}
-        <button onClick={() => setEditandoServicio({ ...p })} style={{ background: "#FDF3DC", color: "#8B6914", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✏️ Editar</button>
-        <button onClick={() => handleRechazar(p.id)} style={{ background: "#FDECEA", color: "#C0392B", border: "none", borderRadius: 8, padding: "7px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>{esPendiente ? "✕ Rechazar" : "🗑 Eliminar"}</button>
-      </div>
-    </div>
   );
 
   const ModalEditarServicio = () => {
@@ -1257,6 +1405,9 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           {/* Logout */}
           <div style={{ padding: "12px 16px", borderTop: "1px solid #D4EAE0" }}>
             <button onClick={onLogout} style={{ width: "100%", background: "#FDECEA", color: "#C0392B", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cerrar sesión</button>
+            <p style={{ fontSize: 10, color: "#4A7C6F", marginTop: 10, textAlign: "center", lineHeight: 1.5 }}>
+              © 2026 <strong>1dato</strong><br />Todos los derechos reservados
+            </p>
           </div>
         </div>
 
@@ -1270,14 +1421,20 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
               <p style={{ fontSize: 13, color: "#7A7570", marginBottom: 24 }}>{cond?.nombre} · {new Date().toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}</p>
 
               {/* Stats principales */}
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7A7570", marginBottom: 10 }}>Estado general del directorio</p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
                 {[
-                  { label: "Pendientes", val: pendientes.length, bg: "#FDF3DC", color: "#8B6914", border: "#EDE5CC" },
-                  { label: "Aprobados", val: aprobados.length, bg: "#D8EFE4", color: "#2D6A4F", border: "#B8DDC8" },
-                  { label: "Total", val: servicios.length, bg: "white", color: "#1C1A16", border: "#E2DDD4" },
-                  { label: "Categorías", val: catsActivas.length, bg: "#E8F5EE", color: "#2D6A4F", border: "#C8E8D8" },
+                  { label: "Pendientes", val: pendientes.length, bg: "#FDF3DC", color: "#8B6914", border: "#EDE5CC", seccion: "servicios" },
+                  { label: "Aprobados", val: aprobados.length, bg: "#D8EFE4", color: "#2D6A4F", border: "#B8DDC8", seccion: "servicios" },
+                  { label: "Total", val: servicios.length, bg: "white", color: "#1C1A16", border: "#E2DDD4", seccion: "servicios" },
+                  { label: "Categorías", val: catsActivas.length, bg: "#E8F5EE", color: "#2D6A4F", border: "#C8E8D8", seccion: null },
                 ].map(s => (
-                  <div key={s.label} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 12, padding: "16px 18px" }}>
+                  <div key={s.label}
+                    onClick={() => s.seccion && setSeccion(s.seccion)}
+                    style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 12, padding: "16px 18px", cursor: s.seccion ? "pointer" : "default", transition: "box-shadow 0.15s" }}
+                    onMouseEnter={e => { if (s.seccion) e.currentTarget.style.boxShadow = "0 4px 16px rgba(28,26,22,0.1)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}
+                  >
                     <p style={{ fontSize: 30, fontWeight: 700, color: s.color, fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{s.val}</p>
                     <p style={{ fontSize: 10, fontWeight: 600, color: s.color, letterSpacing: "0.06em", textTransform: "uppercase", marginTop: 6, opacity: 0.8 }}>{s.label}</p>
                   </div>
@@ -1359,20 +1516,20 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
                 <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
                   <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Tasa de contacto</p>
-                  <p style={{ fontSize: 32, fontWeight: 700, color: "#2D6A4F", fontFamily: "'DM Serif Display', serif" }}>{eventos.length > 0 ? `${tasaContacto}%` : "—"}</p>
-                  <p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>de vistas que llaman</p>
+                  <p style={{ fontSize: 32, fontWeight: 700, color: "#2D6A4F", fontFamily: "'DM Serif Display', serif" }}>{eventosRecientes.length > 0 ? `${tasaContacto7d}%` : "—"}</p>
+                  <p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>vistas que llaman · últimos 7 días</p>
                 </div>
                 <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
                   <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Más visto</p>
                   {masVistoSvc
-                    ? <><p style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F" }}>{masVistoSvc.nombre}</p><p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>{masVisto[1]} vista{masVisto[1] !== 1 ? "s" : ""}</p></>
+                    ? <><p style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F" }}>{masVistoSvc.nombre}</p><p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>{masVisto[1]} vista{masVisto[1] !== 1 ? "s" : ""} · histórico</p></>
                     : <p style={{ fontSize: 12, color: "#7A7570" }}>Sin datos aún</p>
                   }
                 </div>
                 <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
                   <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Más contactado</p>
                   {masContactadoSvc
-                    ? <><p style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F" }}>{masContactadoSvc.nombre}</p><p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>{masContactado[1]} contacto{masContactado[1] !== 1 ? "s" : ""}</p></>
+                    ? <><p style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F" }}>{masContactadoSvc.nombre}</p><p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>{masContactado[1]} contacto{masContactado[1] !== 1 ? "s" : ""} · histórico</p></>
                     : <p style={{ fontSize: 12, color: "#7A7570" }}>Sin datos aún</p>
                   }
                 </div>
@@ -1390,25 +1547,16 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
 
           {/* ── SERVICIOS ── */}
           {seccion === "servicios" && (
-            <div className="fade-up">
-              <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 20 }}>Servicios</h1>
-              {cargando ? <Cargando /> : (
-                <div>
-                  {pendientes.length > 0 && (
-                    <div style={{ marginBottom: 24 }}>
-                      <h3 className="serif" style={{ fontSize: 18, marginBottom: 12, color: "#1A3F2F" }}>⏳ Pendientes ({pendientes.length})</h3>
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{pendientes.map(p => <FilaServicio key={p.id} p={p} esPendiente />)}</div>
-                    </div>
-                  )}
-                  <div>
-                    <h3 className="serif" style={{ fontSize: 18, marginBottom: 12, color: "#1A3F2F" }}>✅ Aprobados ({aprobados.length})</h3>
-                    {aprobados.length === 0
-                      ? <p style={{ color: "#7A7570", fontSize: 14 }}>Sin servicios aprobados aún.</p>
-                      : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{aprobados.map(p => <FilaServicio key={p.id} p={p} esPendiente={false} />)}</div>}
-                  </div>
-                </div>
-              )}
-            </div>
+            <SeccionServicios
+              servicios={servicios}
+              pendientes={pendientes}
+              aprobados={aprobados}
+              todasCats={todasCats}
+              cargando={cargando}
+              onAprobar={handleAprobar}
+              onConfirmar={setConfirmando}
+              onEditar={setEditandoServicio}
+            />
           )}
 
           {/* ── CARGA MASIVA ── */}
@@ -1449,7 +1597,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                     {todasCats.map(cat => { const activa = editando.categorias_activas.includes(cat.id); return (
                       <div key={cat.id} style={{ display: "flex", alignItems: "center" }}>
                         <button onClick={() => setEditando(prev => ({ ...prev, categorias_activas: activa ? prev.categorias_activas.filter(c => c !== cat.id) : [...prev.categorias_activas, cat.id] }))} style={{ background: activa ? "#D8EFE4" : "#F5F2EC", color: activa ? "#2D6A4F" : "#7A7570", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderRadius: cat.custom ? "999px 0 0 999px" : 999, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRight: cat.custom ? "none" : undefined }}>{cat.emoji} {cat.label} {activa ? "✓" : "+"}</button>
-                        {cat.custom && <button onClick={() => handleEliminarCategoria(cat.id)} style={{ background: "#FDECEA", color: "#C0392B", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderLeft: "1px solid #E2DDD4", borderRadius: "0 999px 999px 0", padding: "6px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✕</button>}
+                        {cat.custom && <button onClick={() => setConfirmando({ tipo: "categoria", id: cat.id, nombre: cat.label })} style={{ background: "#FDECEA", color: "#C0392B", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderLeft: "1px solid #E2DDD4", borderRadius: "0 999px 999px 0", padding: "6px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✕</button>}
                       </div>
                     ); })}
                   </div>
@@ -1481,6 +1629,33 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
         </div>
       </div>
       {editandoServicio && <ModalEditarServicio />}
+
+      {/* ── Modal Confirmación ── */}
+      {confirmando && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(28,26,22,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 400, padding: 24 }}>
+          <div className="fade-up" style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 16, padding: "28px 32px", width: "100%", maxWidth: 380, boxShadow: "0 20px 60px rgba(28,26,22,0.2)", textAlign: "center" }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#FDECEA", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 22 }}>⚠</div>
+            <h3 className="serif" style={{ fontSize: 20, color: "#1A3F2F", marginBottom: 8 }}>
+              {confirmando.tipo === "categoria" ? "¿Eliminar categoría?" : confirmando.tipo === "rechazar" ? "¿Rechazar servicio?" : "¿Eliminar servicio?"}
+            </h3>
+            <p style={{ fontSize: 13, color: "#7A7570", lineHeight: 1.6, marginBottom: 24 }}>
+              {confirmando.tipo === "categoria"
+                ? <>Vas a eliminar la categoría <strong>"{confirmando.nombre}"</strong>. Esta acción no se puede deshacer.</>
+                : <>Vas a {confirmando.tipo === "rechazar" ? "rechazar" : "eliminar"} a <strong>"{confirmando.nombre}"</strong>. Esta acción no se puede deshacer.</>
+              }
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => setConfirmando(null)} style={{ flex: 1, background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: "11px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#7A7570" }}>Cancelar</button>
+              <button
+                onClick={() => confirmando.tipo === "categoria" ? handleEliminarCategoria(confirmando.id) : handleRechazar(confirmando.id)}
+                style={{ flex: 1, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, padding: "11px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
+              >
+                {confirmando.tipo === "rechazar" ? "Rechazar" : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
@@ -1512,6 +1687,7 @@ export default function App() {
   if (cargandoApp) return <><style>{defaultCSS}</style><Cargando mensaje="Iniciando 1dato..." /></>;
 
   if (esAdmin) {
+    document.title = "1dato | Panel Admin";
     const adminCSS = buildCSS({ accent: "#3D4F6B", accentLight: "#D9DEE8", bg: "#F2F3F5", surface: "#FAFAFA", border: "#DDE0E6" });
     return (
       <>
@@ -1522,22 +1698,26 @@ export default function App() {
   }
 
   const cond = condominios.find(c => c.slug === path);
-  if (!cond) return (
-    <>
-      <style>{defaultCSS}</style>
-      <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-          <div style={{ textAlign: "center", maxWidth: 380 }}>
-            <p style={{ fontSize: 48 }}>🏠</p>
-            <h2 className="serif" style={{ fontSize: 26, marginTop: 16 }}>Condominio no encontrado</h2>
-            <p style={{ color: "var(--text-muted)", marginTop: 10, lineHeight: 1.6 }}>La URL no corresponde a ningún condominio registrado.</p>
+  if (!cond) {
+    document.title = "1dato | Condominio no encontrado";
+    return (
+      <>
+        <style>{defaultCSS}</style>
+        <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
+          <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div style={{ textAlign: "center", maxWidth: 380 }}>
+              <p style={{ fontSize: 48 }}>🏠</p>
+              <h2 className="serif" style={{ fontSize: 26, marginTop: 16 }}>Condominio no encontrado</h2>
+              <p style={{ color: "var(--text-muted)", marginTop: 10, lineHeight: 1.6 }}>La URL no corresponde a ningún condominio registrado.</p>
+            </div>
           </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
-    </>
-  );
+      </>
+    );
+  }
 
+  document.title = `1dato | ${cond.nombre}`;
   const css = buildCSS(cond.colores);
   return (
     <>
