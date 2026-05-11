@@ -119,8 +119,8 @@ const EMOJIS_SUGERIDOS = [
 ];
 
 // ── CSS Builder ───────────────────────────────────────────────────
-const buildCSS = (c) => `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+const buildCSS = (c, adminMode = false) => `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: ${c.bg};
@@ -139,7 +139,7 @@ const buildCSS = (c) => `
     --shadow-md: 0 8px 32px rgba(28,26,22,0.13);
     --sidebar-w: 220px;
   }
-  body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); }
+  body { background: var(--bg); font-family: ${adminMode ? "'Inter', sans-serif" : "'DM Sans', sans-serif"}; color: var(--text); }
   .serif { font-family: 'DM Serif Display', serif; }
   ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -380,14 +380,28 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</p>
-            <a href={`tel:${p.telefono.replace(/\s/g, "")}`}
-              onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
-              style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 2, display: "flex", alignItems: "center", gap: 4, textDecoration: "none", whiteSpace: "nowrap" }}
-              onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
-              onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
-            >
-              <Phone size={10} strokeWidth={2} style={{ flexShrink: 0 }} /> {p.telefono}
-            </a>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+              <a href={`tel:${p.telefono.replace(/\s/g, "")}`}
+                onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
+                style={{ color: "var(--text-muted)", fontSize: 12, display: "flex", alignItems: "center", gap: 4, textDecoration: "none", whiteSpace: "nowrap" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+              >
+                <Phone size={10} strokeWidth={2} style={{ flexShrink: 0 }} /> {p.telefono}
+              </a>
+              <a
+                href={`https://wa.me/${p.telefono.replace(/\D/g, "").replace(/^0/, "")}`}
+                target="_blank" rel="noreferrer"
+                onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
+                title="Escribir por WhatsApp"
+                style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: "#25D366", textDecoration: "none", background: "#E8FBF0", borderRadius: 6, padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0 }}
+                onMouseEnter={e => e.currentTarget.style.background = "#C8F5DC"}
+                onMouseLeave={e => e.currentTarget.style.background = "#E8FBF0"}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                WA
+              </a>
+            </div>
           </div>
           <Badge categoriaId={p.categoria} todasCats={todasCats} />
         </div>
@@ -542,7 +556,6 @@ const ModalContacto = ({ condominio, onCerrar }) => {
 
 // ── Navbar 1dato ──────────────────────────────────────────────────
 const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onProponer }) => {
-  const [modalBusqueda, setModalBusqueda] = useState(false);
   const [modalContacto, setModalContacto] = useState(false);
 
   const NavLink = ({ id, label }) => (
@@ -616,28 +629,8 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
             onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
           >Contáctanos</button>
         </div>
-
-        {/* Lupa */}
-        <button onClick={() => setModalBusqueda(true)} style={{
-          background: "var(--bg)", border: "1.5px solid var(--border)", borderRadius: 10,
-          width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center",
-          cursor: "pointer", transition: "border-color 0.15s", flexShrink: 0,
-        }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
-          onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
-        >
-          <Search size={16} color="var(--text-muted)" strokeWidth={2} />
-        </button>
       </nav>
 
-      {modalBusqueda && (
-        <ModalBusqueda
-          servicios={servicios}
-          todasCats={todasCats}
-          onCerrar={() => setModalBusqueda(false)}
-          onSeleccionar={(catId) => { onNavegar("servicios", catId); }}
-        />
-      )}
       {modalContacto && <ModalContacto condominio={condominio} onCerrar={() => setModalContacto(false)} />}
     </>
   );
@@ -658,8 +651,8 @@ const Hero = ({ condominio, onNavegar }) => (
 
     <div className="fade-up" style={{ position: "relative", zIndex: 1, maxWidth: 600 }}>
       <div style={{ marginBottom: 16 }}>
-        <p style={{ fontSize: 16, fontWeight: 600, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.01em" }}>
-          {condominio.nombre}{condominio.comuna ? <span style={{ fontWeight: 400, color: "var(--text)", opacity: 0.6 }}> · {condominio.comuna}</span> : null}
+        <p style={{ fontSize: 18, fontWeight: 600, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.01em" }}>
+          {condominio.nombre}{condominio.comuna ? <span style={{ fontWeight: 500, color: "var(--text)" }}> · {condominio.comuna}</span> : null}
         </p>
       </div>
       <h1 className="serif" style={{ fontSize: 54, lineHeight: 1.12, marginBottom: 20, color: "var(--text)" }}>
@@ -738,6 +731,8 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
   const [grupoActivo, setGrupoActivo] = useState(filtroGrupoInicial || GRUPOS[0].id);
   const [catActiva, setCatActiva] = useState(filtroCatInicial || null);
   const [acordeonesAbiertos, setAcordeonesAbiertos] = useState({});
+  const [modalBusqueda, setModalBusqueda] = useState(false);
+  const acordeonRefs = useRef({});
 
   // Sincronizar si llegan filtros externos (desde búsqueda)
   useEffect(() => {
@@ -747,6 +742,10 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
       const cat = todasCats.find(c => c.id === filtroCatInicial);
       if (cat) setGrupoActivo(cat.grupo);
       setAcordeonesAbiertos(prev => ({ ...prev, [filtroCatInicial]: true }));
+      // S2: scroll automático al acordeón
+      setTimeout(() => {
+        acordeonRefs.current[filtroCatInicial]?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 120);
     }
   }, [filtroGrupoInicial, filtroCatInicial]);
 
@@ -824,13 +823,42 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
         {cargando ? <Cargando mensaje="Cargando servicios..." /> : (
           <>
             {grupoActualObj && (
-              <div style={{ marginBottom: 24 }} className="fade-up">
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                  <grupoActualObj.Icon size={20} color="var(--accent)" strokeWidth={1.75} />
-                  <h2 className="serif" style={{ fontSize: 26 }}>{grupoActualObj.label}</h2>
+              <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }} className="fade-up">
+                <div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                    <grupoActualObj.Icon size={20} color="var(--accent)" strokeWidth={1.75} />
+                    <h2 className="serif" style={{ fontSize: 26 }}>{grupoActualObj.label}</h2>
+                  </div>
+                  <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{contarGrupo(grupoActivo)} servicio{contarGrupo(grupoActivo) !== 1 ? "s" : ""} disponible{contarGrupo(grupoActivo) !== 1 ? "s" : ""}</p>
                 </div>
-                <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{contarGrupo(grupoActivo)} servicio{contarGrupo(grupoActivo) !== 1 ? "s" : ""} disponible{contarGrupo(grupoActivo) !== 1 ? "s" : ""}</p>
+                {/* Opción A: lupa alineada al título del grupo */}
+                <button onClick={() => setModalBusqueda(true)} style={{
+                  background: "var(--bg)", border: "1.5px solid var(--border)", borderRadius: 10,
+                  height: 38, padding: "0 14px", display: "flex", alignItems: "center", gap: 8,
+                  cursor: "pointer", transition: "border-color 0.15s", flexShrink: 0, marginTop: 2,
+                  fontSize: 13, color: "var(--text-muted)", fontFamily: "inherit",
+                }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+                >
+                  <Search size={15} color="var(--text-muted)" strokeWidth={2} />
+                  Buscar servicio
+                </button>
               </div>
+            )}
+            {modalBusqueda && (
+              <ModalBusqueda
+                servicios={servicios}
+                todasCats={todasCats}
+                onCerrar={() => setModalBusqueda(false)}
+                onSeleccionar={(catId) => {
+                  const cat = todasCats.find(c => c.id === catId);
+                  if (cat) setGrupoActivo(cat.grupo);
+                  setCatActiva(catId);
+                  setAcordeonesAbiertos(prev => ({ ...prev, [catId]: true }));
+                  setTimeout(() => acordeonRefs.current[catId]?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+                }}
+              />
             )}
 
             {catsDelGrupo.length === 0 ? (
@@ -843,7 +871,7 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
                   const total = serviciosCat.length;
                   if (total === 0) return null;
                   return (
-                    <div key={cat.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", overflow: "hidden", boxShadow: "var(--shadow)" }}>
+                    <div key={cat.id} ref={el => acordeonRefs.current[cat.id] = el} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", overflow: "hidden", boxShadow: "var(--shadow)" }}>
                       {/* Header acordeón */}
                       <button onClick={() => toggleAcordeon(cat.id)} style={{
                         width: "100%", background: "none", border: "none", padding: "16px 20px",
@@ -974,6 +1002,7 @@ const Logo1dato = ({ onVolver }) => (
 const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
   const [form, setForm] = useState({ nombre: "", grupo: "", categoria: "", telefonoLocal: "", descripcion: "", recomienda: true });
   const [telError, setTelError] = useState("");
+  const [unicidadError, setUnicidadError] = useState("");
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [serviciosCount, setServiciosCount] = useState(0);
@@ -1008,6 +1037,17 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
   const handleEnviar = async () => {
     if (!valido) return;
     setEnviando(true);
+    setUnicidadError("");
+    // Validación unicidad teléfono + categoría
+    const existentes = await query("proveedores", {
+      filter: `condominio=eq.${condominio.slug}&telefono=eq.${encodeURIComponent(telefonoCompleto)}&categoria=eq.${form.categoria}`,
+      select: "id",
+    });
+    if (Array.isArray(existentes) && existentes.length > 0) {
+      setUnicidadError("Ya existe un servicio con este teléfono en esta categoría.");
+      setEnviando(false);
+      return;
+    }
     await query("proveedores", {
       insert: { condominio: condominio.slug, nombre: form.nombre, categoria: form.categoria, telefono: telefonoCompleto, descripcion: form.descripcion, recomienda: form.recomienda, estado: "pendiente" },
     });
@@ -1041,18 +1081,15 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column" }}>
-      {/* Barra superior mínima */}
-      <div style={{
-        background: "var(--surface)", borderBottom: "1px solid var(--border)",
-        padding: "0 32px", height: 56, display: "flex", alignItems: "center",
-        gap: 0, position: "sticky", top: 0, zIndex: 100,
-      }}>
-        <Logo1dato onVolver={onVolver} />
-        <div style={{ width: 1, height: 28, background: "var(--border)", margin: "0 16px", flexShrink: 0 }} />
-        <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)", whiteSpace: "nowrap" }}>
-          {condominio.nombre}
-        </span>
-      </div>
+      {/* Navbar completo igual al resto de la app */}
+      <Navbar
+        condominio={condominio}
+        onNavegar={(dest) => { if (dest === "inicio" || dest === "servicios" || dest === "como_funciona") onVolver(); }}
+        vistaActiva=""
+        servicios={[]}
+        todasCats={todasCats}
+        onProponer={() => {}}
+      />
 
       <div style={{ flex: 1, padding: "32px", display: "flex", flexDirection: "column" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 24, maxWidth: 1100, margin: "0 auto", width: "100%", flex: 1, alignItems: "stretch" }}>
@@ -1170,6 +1207,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
               <button onClick={handleEnviar} disabled={!valido || enviando} style={{ marginTop: 4, background: (!valido || enviando) ? "var(--border)" : "var(--accent)", color: (!valido || enviando) ? "var(--text-muted)" : "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600, cursor: (!valido || enviando) ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
                 {enviando ? "⟳ Enviando..." : "Enviar sugerencia"}
               </button>
+              {unicidadError && <p style={{ fontSize: 12, color: "var(--warn)", background: "var(--warn-light)", padding: "8px 12px", borderRadius: 8 }}>⚠ {unicidadError}</p>}
               <p style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6, borderTop: "1px solid var(--border)", paddingTop: 12, textAlign: "center" }}>
                 🔒 Los datos serán publicados una vez validados. Para eliminar tu información escribe a <strong>{ADMIN_EMAIL}</strong>
               </p>
@@ -1540,27 +1578,93 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
     setSeccion("dashboard");
   };
 
-  if (!editando) return <Cargando />;
+  // ── Dashboard período filter ──────────────────────────────────
+  const [periodo, setPeriodo] = useState("7d");
+  const msMap = { hoy: 1, "7d": 7, mes: 30 };
+  const diasPeriodo = msMap[periodo] || 7;
+  const hacePeriodo = new Date(Date.now() - diasPeriodo * 24 * 60 * 60 * 1000).toISOString();
+  const haceDosPeriodos = new Date(Date.now() - diasPeriodo * 2 * 24 * 60 * 60 * 1000).toISOString();
 
-  const pendientes = servicios.filter(p => p.estado === "pendiente");
+  const eventosDelPeriodo = eventos.filter(e => e.created_at >= hacePeriodo);
+  const eventosPeriodoAnterior = eventos.filter(e => e.created_at >= haceDosPeriodos && e.created_at < hacePeriodo);
+
+  const vistasPeriodo = eventosDelPeriodo.filter(e => e.tipo === "vista");
+  const contactosPeriodo = eventosDelPeriodo.filter(e => e.tipo === "contacto");
+  const vistasAnt = eventosPeriodoAnterior.filter(e => e.tipo === "vista");
+  const contactosAnt = eventosPeriodoAnterior.filter(e => e.tipo === "contacto");
+
+  const calcVar = (actual, anterior) => {
+    if (anterior === 0) return actual > 0 ? "+100%" : null;
+    const diff = Math.round(((actual - anterior) / anterior) * 100);
+    return (diff >= 0 ? "+" : "") + diff + "%";
+  };
+  const varVistas = calcVar(vistasPeriodo.length, vistasAnt.length);
+  const varContactos = calcVar(contactosPeriodo.length, contactosAnt.length);
+  const tasaContactoPeriodo = vistasPeriodo.length > 0 ? Math.round((contactosPeriodo.length / vistasPeriodo.length) * 100) : 0;
+  const tasaAnt = vistasAnt.length > 0 ? Math.round((contactosAnt.length / vistasAnt.length) * 100) : 0;
+  const varTasa = calcVar(tasaContactoPeriodo, tasaAnt);
+
+  // Actividad diaria usando el período seleccionado
+  const diasLabel = Array.from({ length: Math.min(diasPeriodo, 7) }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (Math.min(diasPeriodo, 7) - 1 - i));
+    return d.toISOString().split("T")[0];
+  });
+  const actividadDiaria = diasLabel.map(dia => ({
+    dia: dia.slice(5),
+    vistas: eventos.filter(e => e.tipo === "vista" && e.created_at?.startsWith(dia)).length,
+    contactos: eventos.filter(e => e.tipo === "contacto" && e.created_at?.startsWith(dia)).length,
+  }));
+  const maxActividad = Math.max(...actividadDiaria.map(d => d.vistas + d.contactos), 1);
+
+  // Helper: nombre con categoría
+  const nombreConCat = (svc) => {
+    if (!svc) return "—";
+    const cat = todasCats.find(c => c.id === svc.categoria);
+    return cat ? `${svc.nombre} (${cat.label})` : svc.nombre;
+  };
+
+  // Exportar reporte XLSX
+  const exportarReporte = () => {
+    const wb = XLSX.utils.book_new();
+    // Hoja 1: Servicios aprobados
+    const svcsData = [
+      ["Nombre", "Categoría", "Teléfono", "Descripción", "Recomienda", "Estado"],
+      ...aprobados.map(s => [s.nombre, todasCats.find(c => c.id === s.categoria)?.label || s.categoria, s.telefono, s.descripcion || "", s.recomienda ? "Sí" : "No", s.estado]),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(svcsData), "Servicios");
+    // Hoja 2: Eventos del período
+    const evData = [
+      ["Proveedor", "Categoría", "Tipo", "Fecha"],
+      ...eventosDelPeriodo.map(e => {
+        const svc = servicios.find(s => s.id === e.proveedor_id);
+        return [svc?.nombre || e.proveedor_id, todasCats.find(c => c.id === svc?.categoria)?.label || "", e.tipo, e.created_at?.slice(0, 10)];
+      }),
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(evData), "Actividad");
+    // Hoja 3: Resumen
+    const resData = [
+      ["Métrica", "Valor"],
+      ["Condominio", cond?.nombre],
+      ["Período", periodo === "hoy" ? "Hoy" : periodo === "7d" ? "Últimos 7 días" : "Último mes"],
+      ["Servicios aprobados", aprobados.length],
+      ["Servicios pendientes", pendientes.length],
+      ["Vistas en el período", vistasPeriodo.length],
+      ["Contactos en el período", contactosPeriodo.length],
+      ["Conversión de consultas", `${tasaContactoPeriodo}%`],
+    ];
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resData), "Resumen");
+    XLSX.writeFile(wb, `reporte_${cond?.slug}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
+
+  if (!editando) return <Cargando />;
   const aprobados = servicios.filter(p => p.estado === "aprobado");
   const catsActivas = todasCats.filter(c => cond?.categorias_activas.includes(c.id));
 
-  // Estadísticas de eventos
-  const hace7dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-  const eventosRecientes = eventos.filter(e => e.created_at >= hace7dias);
-  const vistas7d = eventosRecientes.filter(e => e.tipo === "vista");
-  const contactos7d = eventosRecientes.filter(e => e.tipo === "contacto");
-  const tasaContacto7d = vistas7d.length > 0 ? Math.round((contactos7d.length / vistas7d.length) * 100) : 0;
-
+  // Ranking histórico por proveedor
   const vistasTotal = eventos.filter(e => e.tipo === "vista");
   const contactosTotal = eventos.filter(e => e.tipo === "contacto");
-
-  const contarPorProveedor = (evs) => {
-    const counts = {};
-    evs.forEach(e => { counts[e.proveedor_id] = (counts[e.proveedor_id] || 0) + 1; });
-    return counts;
-  };
+  const contarPorProveedor = (evs) => { const c = {}; evs.forEach(e => { c[e.proveedor_id] = (c[e.proveedor_id] || 0) + 1; }); return c; };
   const vistasPorProv = contarPorProveedor(vistasTotal);
   const contactosPorProv = contarPorProveedor(contactosTotal);
   const masVisto = Object.entries(vistasPorProv).sort((a, b) => b[1] - a[1])[0];
@@ -1571,38 +1675,25 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
 
   // Servicios por categoría
   const porCategoria = catsActivas.map(cat => ({
-    ...cat,
-    total: aprobados.filter(s => s.categoria === cat.id).length,
+    ...cat, total: aprobados.filter(s => s.categoria === cat.id).length,
   })).filter(c => c.total > 0).sort((a, b) => b.total - a.total).slice(0, 6);
   const maxCat = Math.max(...porCategoria.map(c => c.total), 1);
 
-  // Actividad últimos 7 días
-  const dias = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    return d.toISOString().split("T")[0];
-  });
-  const actividadDiaria = dias.map(dia => ({
-    dia: dia.slice(5),
-    vistas: eventos.filter(e => e.tipo === "vista" && e.created_at?.startsWith(dia)).length,
-    contactos: eventos.filter(e => e.tipo === "contacto" && e.created_at?.startsWith(dia)).length,
-  }));
-  const maxActividad = Math.max(...actividadDiaria.map(d => d.vistas + d.contactos), 1);
-
   const SideLink = ({ id, icon, label, badge }) => (
     <button onClick={() => setSeccion(id)} style={{
-      width: "100%", textAlign: "left", background: seccion === id ? "#D8EFE4" : "transparent",
-      border: "none", borderLeft: `3px solid ${seccion === id ? "#2D6A4F" : "transparent"}`,
+      width: "100%", textAlign: "left",
+      background: seccion === id ? "#2D6A4F" : "transparent",
+      border: "none", borderLeft: `3px solid ${seccion === id ? "#1A3F2F" : "transparent"}`,
       padding: "10px 16px", cursor: "pointer", fontFamily: "inherit",
       display: "flex", alignItems: "center", gap: 10, transition: "all 0.15s",
-      color: seccion === id ? "#1A3F2F" : "#7A7570", fontSize: 13, fontWeight: seccion === id ? 600 : 400,
+      color: seccion === id ? "#ffffff" : "#5A7A6A", fontSize: 13, fontWeight: seccion === id ? 600 : 400,
     }}
-      onMouseEnter={e => { if (seccion !== id) e.currentTarget.style.background = "#f0f8f4"; }}
+      onMouseEnter={e => { if (seccion !== id) e.currentTarget.style.background = "#d0eadb"; }}
       onMouseLeave={e => { if (seccion !== id) e.currentTarget.style.background = "transparent"; }}
     >
       <span style={{ fontSize: 15 }}>{icon}</span>
       <span style={{ flex: 1 }}>{label}</span>
-      {badge > 0 && <span style={{ background: "#FDF3DC", color: "#8B6914", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 999 }}>{badge}</span>}
+      {badge > 0 && <span style={{ background: seccion === id ? "rgba(255,255,255,0.25)" : "#FDF3DC", color: seccion === id ? "#fff" : "#8B6914", fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 999 }}>{badge}</span>}
     </button>
   );
 
@@ -1648,38 +1739,34 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
 
         {/* Sidebar */}
         <div style={{ width: 220, flexShrink: 0, background: "#e8f5ee", borderRight: "1px solid #D4EAE0", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
-          {/* Logo */}
-          <div style={{ padding: "18px 16px 14px", borderBottom: "1px solid #D4EAE0" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
+          {/* Logo con padding generoso */}
+          <div style={{ padding: "22px 18px 16px", borderBottom: "1px solid #D4EAE0" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
                 <rect width="28" height="28" rx="7" fill="#2D6A4F"/>
                 <circle cx="9" cy="14" r="2.2" fill="white"/>
                 <circle cx="14" cy="14" r="2.2" fill="white"/>
                 <circle cx="19" cy="14" r="2.2" fill="white"/>
                 <path d="M6 19 L6 22 L10 19" fill="#2D6A4F"/>
               </svg>
-              <span style={{ fontSize: 16, fontWeight: 700, color: "#2D6A4F" }}>1</span>
-              <span style={{ fontSize: 16, fontWeight: 300, color: "#1C1A16", marginLeft: -4 }}>dato</span>
+              <span style={{ fontSize: 17, fontWeight: 700, color: "#2D6A4F", fontFamily: "'Inter', sans-serif", letterSpacing: "-0.5px" }}>1</span>
+              <span style={{ fontSize: 17, fontWeight: 300, color: "#1C1A16", fontFamily: "'Inter', sans-serif", marginLeft: -6 }}>dato</span>
             </div>
           </div>
 
-          {/* Condominios — nivel global */}
-          <div style={{ borderBottom: "1px solid #D4EAE0" }}>
-            <SideLink id="condominios" icon="🏘️" label="Condominios" badge={condominios.length} />
-          </div>
-
-          {/* Selector condominio activo */}
+          {/* Selector condominio — contexto global arriba */}
           <div style={{ padding: "14px 16px", borderBottom: "1px solid #D4EAE0" }}>
-            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", marginBottom: 4 }}>Panel Admin</p>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", marginBottom: 6 }}>Condominio</p>
             <select value={condominioActivo} onChange={e => setCondominioActivo(e.target.value)}
-              style={{ width: "100%", fontSize: 12, fontWeight: 600, color: "#1A3F2F", background: "transparent", border: "none", outline: "none", cursor: "pointer", fontFamily: "inherit" }}>
+              style={{ width: "100%", fontSize: 12, fontWeight: 600, color: "#1A3F2F", background: "white", border: "1.5px solid #D4EAE0", borderRadius: 8, padding: "7px 10px", outline: "none", cursor: "pointer", fontFamily: "inherit" }}>
               {condominios.map(c => <option key={c.slug} value={c.slug}>{c.nombre}</option>)}
             </select>
           </div>
 
-          {/* Nav por condominio */}
+          {/* Nav */}
           <div style={{ flex: 1, padding: "12px 0" }}>
             <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", padding: "0 16px 8px" }}>Menú</p>
+            <SideLink id="condominios" icon="🏘️" label="Condominios" badge={condominios.length} />
             <SideLink id="dashboard" icon="📊" label="Dashboard" />
             <SideLink id="servicios" icon="📋" label="Servicios" badge={pendientes.length} />
             <SideLink id="carga_masiva" icon="📥" label="Carga Masiva" />
@@ -1817,17 +1904,43 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           {/* ── DASHBOARD ── */}
           {seccion === "dashboard" && (
             <div className="fade-up">
-              <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 4 }}>Dashboard</h1>
-              <p style={{ fontSize: 13, color: "#7A7570", marginBottom: 24 }}>{cond?.nombre} · {new Date().toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}</p>
+              {/* Header + controles */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
+                <div>
+                  <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 4 }}>Dashboard</h1>
+                  <p style={{ fontSize: 13, color: "#7A7570" }}>{cond?.nombre} · {new Date().toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}</p>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  {/* Filtro período */}
+                  <div style={{ display: "flex", background: "white", border: "1.5px solid #E2DDD4", borderRadius: 10, overflow: "hidden" }}>
+                    {[["hoy","Hoy"],["7d","7 días"],["mes","Mes"]].map(([val, label]) => (
+                      <button key={val} onClick={() => setPeriodo(val)} style={{
+                        background: periodo === val ? "#2D6A4F" : "transparent",
+                        color: periodo === val ? "#fff" : "#7A7570",
+                        border: "none", padding: "7px 14px", fontSize: 12, fontWeight: periodo === val ? 600 : 400,
+                        cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+                      }}>{label}</button>
+                    ))}
+                  </div>
+                  {/* Exportar reporte */}
+                  <button onClick={exportarReporte} style={{
+                    background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10,
+                    padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6,
+                  }}>
+                    📊 Exportar reporte
+                  </button>
+                </div>
+              </div>
 
-              {/* Stats principales */}
-              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7A7570", marginBottom: 10 }}>Estado general del directorio</p>
+              {/* Panel de Control de Servicios */}
+              <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "#7A7570", marginBottom: 10 }}>Panel de Control de Servicios</p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
                 {[
-                  { label: "Pendientes", val: pendientes.length, bg: "#FDF3DC", color: "#8B6914", border: "#EDE5CC", seccion: "servicios" },
-                  { label: "Aprobados", val: aprobados.length, bg: "#D8EFE4", color: "#2D6A4F", border: "#B8DDC8", seccion: "servicios" },
-                  { label: "Total", val: servicios.length, bg: "white", color: "#1C1A16", border: "#E2DDD4", seccion: "servicios" },
-                  { label: "Categorías", val: catsActivas.length, bg: "#E8F5EE", color: "#2D6A4F", border: "#C8E8D8", seccion: null },
+                  { label: "Pendientes", val: pendientes.length, bg: "#FDF3DC", color: "#8B6914", border: "#EDE5CC", seccion: "servicios", cta: pendientes.length === 0 ? "Todo al día ✓" : null },
+                  { label: "Aprobados", val: aprobados.length, bg: "#D8EFE4", color: "#2D6A4F", border: "#B8DDC8", seccion: "servicios", cta: aprobados.length === 0 ? "Agrega servicios →" : null },
+                  { label: "Total", val: servicios.length, bg: "white", color: "#1C1A16", border: "#E2DDD4", seccion: "servicios", cta: null },
+                  { label: "Categorías", val: catsActivas.length, bg: "#E8F5EE", color: "#2D6A4F", border: "#C8E8D8", seccion: null, cta: null },
                 ].map(s => (
                   <div key={s.label}
                     onClick={() => s.seccion && setSeccion(s.seccion)}
@@ -1837,6 +1950,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                   >
                     <p style={{ fontSize: 30, fontWeight: 700, color: s.color, fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{s.val}</p>
                     <p style={{ fontSize: 10, fontWeight: 600, color: s.color, letterSpacing: "0.06em", textTransform: "uppercase", marginTop: 6, opacity: 0.8 }}>{s.label}</p>
+                    {s.cta && <p style={{ fontSize: 10, color: s.color, marginTop: 4, opacity: 0.7 }}>{s.cta}</p>}
                   </div>
                 ))}
               </div>
@@ -1852,8 +1966,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                     {pendientes.slice(0, 3).map(p => (
                       <div key={p.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #F0EDE8" }}>
                         <div>
-                          <p style={{ fontSize: 13, fontWeight: 600 }}>{p.nombre}</p>
-                          <p style={{ fontSize: 11, color: "#7A7570" }}>{todasCats.find(c => c.id === p.categoria)?.label} · {p.telefono}</p>
+                          <p style={{ fontSize: 13, fontWeight: 600 }}>{nombreConCat(p)}</p>
+                          <p style={{ fontSize: 11, color: "#7A7570" }}>{p.telefono}</p>
                         </div>
                         <div style={{ display: "flex", gap: 6 }}>
                           <button onClick={() => handleAprobar(p.id)} style={{ background: "#D8EFE4", color: "#2D6A4F", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✓ Aprobar</button>
@@ -1869,27 +1983,40 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                 {/* Servicios por categoría */}
                 <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "18px 20px" }}>
                   <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 16 }}>Servicios por categoría</h3>
-                  {porCategoria.length === 0
-                    ? <p style={{ fontSize: 12, color: "#7A7570" }}>Sin datos aún</p>
-                    : porCategoria.map(cat => (
-                      <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                        <span style={{ fontSize: 12, color: "#4A4540", width: 100, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.label}</span>
-                        <div style={{ flex: 1, height: 6, background: "#E8F5EE", borderRadius: 3, overflow: "hidden" }}>
-                          <div style={{ width: `${(cat.total / maxCat) * 100}%`, height: "100%", background: "#2D6A4F", borderRadius: 3 }} />
-                        </div>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: "#2D6A4F", width: 20, textAlign: "right" }}>{cat.total}</span>
+                  {porCategoria.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "16px 0" }}>
+                      {/* Placeholder visual */}
+                      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 50, justifyContent: "center", marginBottom: 10, opacity: 0.2 }}>
+                        {[30,50,20,40,35,25].map((h,i) => <div key={i} style={{ width: 18, height: h, background: "#2D6A4F", borderRadius: "3px 3px 0 0" }} />)}
                       </div>
-                    ))
-                  }
+                      <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 8 }}>Sin servicios aprobados aún.</p>
+                      <button onClick={() => setSeccion("carga_masiva")} style={{ fontSize: 11, color: "#2D6A4F", background: "#D8EFE4", border: "none", borderRadius: 6, padding: "5px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Carga masiva →</button>
+                    </div>
+                  ) : porCategoria.map(cat => (
+                    <div key={cat.id} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <span style={{ fontSize: 12, color: "#4A4540", width: 100, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.label}</span>
+                      <div style={{ flex: 1, height: 6, background: "#E8F5EE", borderRadius: 3, overflow: "hidden" }}>
+                        <div style={{ width: `${(cat.total / maxCat) * 100}%`, height: "100%", background: "#2D6A4F", borderRadius: 3 }} />
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#2D6A4F", width: 20, textAlign: "right" }}>{cat.total}</span>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Actividad 7 días */}
+                {/* Tendencia de Engagement */}
                 <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "18px 20px" }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 4 }}>Actividad últimos 7 días</h3>
-                  <p style={{ fontSize: 11, color: "#7A7570", marginBottom: 14 }}>Vistas y contactos</p>
-                  {eventos.length === 0
-                    ? <p style={{ fontSize: 12, color: "#7A7570" }}>Sin eventos registrados aún</p>
-                    : (
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 4 }}>Tendencia de Engagement</h3>
+                  <p style={{ fontSize: 11, color: "#7A7570", marginBottom: 14 }}>Vistas y contactos · {periodo === "hoy" ? "hoy" : periodo === "7d" ? "últimos 7 días" : "últimos 30 días"}</p>
+                  {eventos.length === 0 ? (
+                    <div style={{ textAlign: "center", padding: "10px 0" }}>
+                      <div style={{ display: "flex", alignItems: "flex-end", gap: 5, height: 50, justifyContent: "center", marginBottom: 10, opacity: 0.15 }}>
+                        {[20,35,15,45,30,25,40].map((h,i) => <div key={i} style={{ width: 14, height: h, background: "#2D6A4F", borderRadius: "3px 3px 0 0" }} />)}
+                      </div>
+                      <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 8 }}>Sin actividad registrada aún.</p>
+                      <p style={{ fontSize: 11, color: "#7A7570" }}>Los eventos se registran cuando vecinos visitan o contactan servicios.</p>
+                    </div>
+                  ) : (
+                    <>
                       <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 80 }}>
                         {actividadDiaria.map((d, i) => (
                           <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
@@ -1901,45 +2028,78 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                           </div>
                         ))}
                       </div>
-                    )
-                  }
-                  {eventos.length > 0 && (
-                    <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-                      <span style={{ fontSize: 10, color: "#2D6A4F", display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, background: "#2D6A4F", borderRadius: 2, display: "inline-block" }} /> Vistas</span>
-                      <span style={{ fontSize: 10, color: "#8B6914", display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, background: "#8B6914", borderRadius: 2, display: "inline-block" }} /> Contactos</span>
+                      <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
+                        <span style={{ fontSize: 10, color: "#2D6A4F", display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, background: "#2D6A4F", borderRadius: 2, display: "inline-block" }} /> Vistas</span>
+                        <span style={{ fontSize: 10, color: "#8B6914", display: "flex", alignItems: "center", gap: 4 }}><span style={{ width: 8, height: 8, background: "#8B6914", borderRadius: 2, display: "inline-block" }} /> Contactos</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Conversión + Rankings */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+                {/* Conversión de Consultas */}
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
+                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Conversión de Consultas</p>
+                  {eventosDelPeriodo.length === 0 ? (
+                    <p style={{ fontSize: 12, color: "#7A7570", marginTop: 8 }}>Sin datos en este período</p>
+                  ) : (
+                    <>
+                      <p style={{ fontSize: 32, fontWeight: 700, color: "#2D6A4F", fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{tasaContactoPeriodo}%</p>
+                      {varTasa && <p style={{ fontSize: 11, color: varTasa.startsWith("+") ? "#2D6A4F" : "#C0392B", marginTop: 4, fontWeight: 600 }}>{varTasa} vs período anterior</p>}
+                      <p style={{ fontSize: 11, color: "#7A7570", marginTop: 2 }}>vistas que se convierten en contacto</p>
+                    </>
+                  )}
+                </div>
+                {/* Ranking de Visibilidad */}
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
+                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Ranking de Visibilidad</p>
+                  {masVistoSvc ? (
+                    <>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#1A3F2F", lineHeight: 1.3 }}>{nombreConCat(masVistoSvc)}</p>
+                      <p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>{masVisto[1]} vista{masVisto[1] !== 1 ? "s" : ""} · histórico</p>
+                    </>
+                  ) : (
+                    <div>
+                      <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 6 }}>Sin datos aún</p>
+                      <p style={{ fontSize: 11, color: "#7A7570" }}>Aparecerá cuando los vecinos visiten servicios</p>
+                    </div>
+                  )}
+                </div>
+                {/* Más contactado */}
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
+                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Más Contactado</p>
+                  {masContactadoSvc ? (
+                    <>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#1A3F2F", lineHeight: 1.3 }}>{nombreConCat(masContactadoSvc)}</p>
+                      <p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>{masContactado[1]} contacto{masContactado[1] !== 1 ? "s" : ""} · histórico</p>
+                    </>
+                  ) : (
+                    <div>
+                      <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 6 }}>Sin datos aún</p>
+                      <p style={{ fontSize: 11, color: "#7A7570" }}>Aparecerá cuando vecinos llamen o escriban</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Stats de eventos */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
-                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
-                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Tasa de contacto</p>
-                  <p style={{ fontSize: 32, fontWeight: 700, color: "#2D6A4F", fontFamily: "'DM Serif Display', serif" }}>{eventosRecientes.length > 0 ? `${tasaContacto7d}%` : "—"}</p>
-                  <p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>vistas que llaman · últimos 7 días</p>
-                </div>
-                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
-                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Más visto</p>
-                  {masVistoSvc
-                    ? <><p style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F" }}>{masVistoSvc.nombre}</p><p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>{masVisto[1]} vista{masVisto[1] !== 1 ? "s" : ""} · histórico</p></>
-                    : <p style={{ fontSize: 12, color: "#7A7570" }}>Sin datos aún</p>
-                  }
-                </div>
-                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
-                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Más contactado</p>
-                  {masContactadoSvc
-                    ? <><p style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F" }}>{masContactadoSvc.nombre}</p><p style={{ fontSize: 11, color: "#7A7570", marginTop: 4 }}>{masContactado[1]} contacto{masContactado[1] !== 1 ? "s" : ""} · histórico</p></>
-                    : <p style={{ fontSize: 12, color: "#7A7570" }}>Sin datos aún</p>
-                  }
-                </div>
-              </div>
-
-              {/* Sin vistas */}
+              {/* Oportunidades de Mejora (antes: "sin vistas") */}
               {sinVistas.length > 0 && (
-                <div style={{ background: "#FDF3DC", border: "1px solid #EDE5CC", borderRadius: 14, padding: "16px 20px" }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: "#8B6914", marginBottom: 8 }}>⚠ {sinVistas.length} servicio{sinVistas.length > 1 ? "s" : ""} sin vistas</p>
-                  <p style={{ fontSize: 12, color: "#7A6040" }}>{sinVistas.slice(0, 3).map(s => s.nombre).join(", ")}{sinVistas.length > 3 ? ` y ${sinVistas.length - 3} más...` : ""}</p>
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "18px 20px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F" }}>💡 Oportunidades de Mejora</h3>
+                    <span style={{ fontSize: 11, color: "#8B6914", background: "#FDF3DC", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>{sinVistas.length} sin vistas</span>
+                  </div>
+                  <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 10 }}>Estos servicios aún no han recibido visitas. Considera revisar su categoría o descripción.</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {sinVistas.slice(0, 6).map(s => (
+                      <span key={s.id} style={{ fontSize: 11, background: "#FDF3DC", color: "#8B6914", padding: "3px 10px", borderRadius: 999, fontWeight: 500 }}>
+                        {nombreConCat(s)}
+                      </span>
+                    ))}
+                    {sinVistas.length > 6 && <span style={{ fontSize: 11, color: "#7A7570" }}>+{sinVistas.length - 6} más</span>}
+                  </div>
                 </div>
               )}
             </div>
@@ -2117,7 +2277,7 @@ export default function App() {
 
   if (esAdmin) {
     document.title = "1dato | Panel Admin";
-    const adminCSS = buildCSS({ accent: "#3D4F6B", accentLight: "#D9DEE8", bg: "#F2F3F5", surface: "#FAFAFA", border: "#DDE0E6" });
+    const adminCSS = buildCSS({ accent: "#3D4F6B", accentLight: "#D9DEE8", bg: "#F2F3F5", surface: "#FAFAFA", border: "#DDE0E6" }, true);
     return (
       <>
         <style>{adminCSS}</style>
