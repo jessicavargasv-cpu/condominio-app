@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
-const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6dGtvd3lvenRxdXBlcGxodmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTA3NTksImV4cCI6MjA4OTQyNjc1OX0.MiUvxkuexamCavTRGoL-xCvmdpe6X0R8CClPKRHQNJI";
+const SUPABASE_URL = "TU_PROJECT_URL";
+const SUPABASE_KEY = "TU_PUBLISHABLE_KEY";
 
 const ADMIN_EMAIL = "admin.appx@gmail.com";
 
@@ -1578,6 +1578,11 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
     setSeccion("dashboard");
   };
 
+  // ── Derivados de servicios (deben ir antes de SideLink y período) ──
+  const pendientes = servicios.filter(p => p.estado === "pendiente");
+  const aprobados = servicios.filter(p => p.estado === "aprobado");
+  const catsActivas = todasCats.filter(c => cond?.categorias_activas.includes(c.id));
+
   // ── Dashboard período filter ──────────────────────────────────
   const [periodo, setPeriodo] = useState("7d");
   const msMap = { hoy: 1, "7d": 7, mes: 30 };
@@ -1658,8 +1663,6 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   };
 
   if (!editando) return <Cargando />;
-  const aprobados = servicios.filter(p => p.estado === "aprobado");
-  const catsActivas = todasCats.filter(c => cond?.categorias_activas.includes(c.id));
 
   // Ranking histórico por proveedor
   const vistasTotal = eventos.filter(e => e.tipo === "vista");
