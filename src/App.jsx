@@ -652,7 +652,7 @@ const Hero = ({ condominio, onNavegar }) => (
     <div className="fade-up" style={{ position: "relative", zIndex: 1, maxWidth: 600 }}>
       <div style={{ marginBottom: 16 }}>
         <p style={{ fontSize: 18, fontWeight: 600, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.01em" }}>
-          {condominio.nombre}{condominio.comuna ? <span style={{ fontWeight: 500, color: "var(--text)" }}> · {condominio.comuna}</span> : null}
+          {condominio.nombre}{condominio.comuna ? <span style={{ fontWeight: 600, color: "var(--accent)" }}> · {condominio.comuna}</span> : null}
         </p>
       </div>
       <h1 className="serif" style={{ fontSize: 54, lineHeight: 1.12, marginBottom: 20, color: "var(--text)" }}>
@@ -1757,7 +1757,13 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
             </div>
           </div>
 
-          {/* Selector condominio — contexto global arriba */}
+          {/* GENERAL */}
+          <div style={{ padding: "12px 0", borderBottom: "1px solid #D4EAE0" }}>
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", padding: "0 16px 6px" }}>General</p>
+            <SideLink id="condominios" icon="🏘️" label="Condominios" />
+          </div>
+
+          {/* CONDOMINIO selector */}
           <div style={{ padding: "14px 16px", borderBottom: "1px solid #D4EAE0" }}>
             <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", marginBottom: 6 }}>Condominio</p>
             <select value={condominioActivo} onChange={e => setCondominioActivo(e.target.value)}
@@ -1766,10 +1772,9 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
             </select>
           </div>
 
-          {/* Nav */}
+          {/* MENÚ */}
           <div style={{ flex: 1, padding: "12px 0" }}>
-            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", padding: "0 16px 8px" }}>Menú</p>
-            <SideLink id="condominios" icon="🏘️" label="Condominios" badge={condominios.length} />
+            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", padding: "0 16px 6px" }}>Menú</p>
             <SideLink id="dashboard" icon="📊" label="Dashboard" />
             <SideLink id="servicios" icon="📋" label="Servicios" badge={pendientes.length} />
             <SideLink id="carga_masiva" icon="📥" label="Carga Masiva" />
@@ -1811,6 +1816,11 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                 {condominios.map(c => {
                   const res = resumenCondominios[c.slug] || { aprobados: 0, pendientes: 0 };
                   const isActivo = condominioActivo === c.slug;
+                  // Vistas del mes para este condominio
+                  const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
+                  const vistasMes = eventos.filter(e => e.tipo === "vista" && e.condominio === c.slug && e.created_at >= inicioMes.toISOString()).length;
+                  // Categorías activas
+                  const numCats = (c.categorias_activas || []).length;
                   return (
                     <div key={c.slug} style={{
                       background: "white", border: `2px solid ${isActivo ? "#2D6A4F" : "#E2DDD4"}`,
@@ -1821,14 +1831,30 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                       onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 24px rgba(28,26,22,0.12)"; if (!isActivo) e.currentTarget.style.borderColor = "#B8DDC8"; }}
                       onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(28,26,22,0.06)"; e.currentTarget.style.borderColor = isActivo ? "#2D6A4F" : "#E2DDD4"; }}
                     >
-                      {/* Color dot + nombre */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                        <div style={{ width: 12, height: 12, borderRadius: "50%", background: c.colores?.accent || "#2D6A4F", flexShrink: 0 }} />
-                        <p style={{ fontWeight: 600, fontSize: 14, color: "#1A3F2F" }}>{c.nombre}</p>
-                        {isActivo && <span style={{ marginLeft: "auto", fontSize: 10, background: "#D8EFE4", color: "#2D6A4F", padding: "2px 8px", borderRadius: 999, fontWeight: 700 }}>Activo</span>}
+                      {/* Header: dot + nombre + badge activo */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: "50%", background: c.colores?.accent || "#2D6A4F", flexShrink: 0 }} />
+                        <p style={{ fontWeight: 600, fontSize: 14, color: "#1A3F2F", flex: 1 }}>{c.nombre}</p>
+                        {isActivo && <span style={{ fontSize: 10, background: "#D8EFE4", color: "#2D6A4F", padding: "2px 8px", borderRadius: 999, fontWeight: 700, flexShrink: 0 }}>Activo</span>}
                       </div>
-                      {/* Comuna */}
-                      {c.comuna && <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 12 }}>📍 {c.comuna}</p>}
+                      {/* Info line: comuna · servicios · categorías · vistas · link */}
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, fontSize: 11, color: "#7A7570", marginBottom: 14 }}>
+                        {c.comuna && <span>📍 {c.comuna}</span>}
+                        {c.comuna && <span style={{ color: "#D4D0CB" }}>·</span>}
+                        <span>📋 {res.aprobados + res.pendientes} servicios</span>
+                        <span style={{ color: "#D4D0CB" }}>·</span>
+                        <span>🏷 {numCats} categorías</span>
+                        <span style={{ color: "#D4D0CB" }}>·</span>
+                        <span>👁 {vistasMes} vistas este mes</span>
+                        <span style={{ color: "#D4D0CB" }}>·</span>
+                        <a
+                          href={`/${c.slug}`} target="_blank" rel="noreferrer"
+                          onClick={e => e.stopPropagation()}
+                          style={{ color: "#2D6A4F", fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: 2 }}
+                          onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
+                          onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}
+                        >/{c.slug} ↗</a>
+                      </div>
                       {/* Stats */}
                       <div style={{ display: "flex", gap: 10, borderTop: "1px solid #F0EDE8", paddingTop: 12 }}>
                         <div style={{ flex: 1, textAlign: "center" }}>
@@ -1846,7 +1872,6 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                           <p style={{ fontSize: 10, color: "#7A7570", marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Total</p>
                         </div>
                       </div>
-                      <p style={{ fontSize: 11, color: "#B8DDC8", marginTop: 10, textAlign: "right" }}>/{c.slug}</p>
                     </div>
                   );
                 })}
@@ -1911,7 +1936,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 12 }}>
                 <div>
                   <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 4 }}>Dashboard</h1>
-                  <p style={{ fontSize: 13, color: "#7A7570" }}>{cond?.nombre} · {new Date().toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}</p>
+                  <p style={{ fontSize: 13, color: "#1A3F2F", fontWeight: 500 }}>{cond?.nombre} · {new Date().toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" })}</p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   {/* Filtro período */}
