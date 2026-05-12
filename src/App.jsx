@@ -1763,15 +1763,6 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
             <SideLink id="condominios" icon="🏘️" label="Condominios" />
           </div>
 
-          {/* CONDOMINIO selector */}
-          <div style={{ padding: "14px 16px", borderBottom: "1px solid #D4EAE0" }}>
-            <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", marginBottom: 6 }}>Condominio</p>
-            <select value={condominioActivo} onChange={e => setCondominioActivo(e.target.value)}
-              style={{ width: "100%", fontSize: 12, fontWeight: 600, color: "#1A3F2F", background: "white", border: "1.5px solid #D4EAE0", borderRadius: 8, padding: "7px 10px", outline: "none", cursor: "pointer", fontFamily: "inherit" }}>
-              {condominios.map(c => <option key={c.slug} value={c.slug}>{c.nombre}</option>)}
-            </select>
-          </div>
-
           {/* MENÚ */}
           <div style={{ flex: 1, padding: "12px 0" }}>
             <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: "#4A7C6F", padding: "0 16px 6px" }}>Menú</p>
@@ -1838,7 +1829,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                         {isActivo && <span style={{ fontSize: 10, background: "#D8EFE4", color: "#2D6A4F", padding: "2px 8px", borderRadius: 999, fontWeight: 700, flexShrink: 0 }}>Activo</span>}
                       </div>
                       {/* Info line: comuna · servicios · categorías · vistas · link */}
-                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, fontSize: 11, color: "#7A7570", marginBottom: 14 }}>
+                      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, fontSize: 11, color: "#7A7570" }}>
                         {c.comuna && <span>📍 {c.comuna}</span>}
                         {c.comuna && <span style={{ color: "#D4D0CB" }}>·</span>}
                         <span>📋 {res.aprobados + res.pendientes} servicios</span>
@@ -1854,23 +1845,6 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                           onMouseEnter={e => e.currentTarget.style.textDecoration = "underline"}
                           onMouseLeave={e => e.currentTarget.style.textDecoration = "none"}
                         >/{c.slug} ↗</a>
-                      </div>
-                      {/* Stats */}
-                      <div style={{ display: "flex", gap: 10, borderTop: "1px solid #F0EDE8", paddingTop: 12 }}>
-                        <div style={{ flex: 1, textAlign: "center" }}>
-                          <p style={{ fontSize: 20, fontWeight: 700, color: "#2D6A4F", fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{res.aprobados}</p>
-                          <p style={{ fontSize: 10, color: "#7A7570", marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Aprobados</p>
-                        </div>
-                        <div style={{ width: 1, background: "#F0EDE8" }} />
-                        <div style={{ flex: 1, textAlign: "center" }}>
-                          <p style={{ fontSize: 20, fontWeight: 700, color: res.pendientes > 0 ? "#8B6914" : "#B0ABA6", fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{res.pendientes}</p>
-                          <p style={{ fontSize: 10, color: "#7A7570", marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Pendientes</p>
-                        </div>
-                        <div style={{ width: 1, background: "#F0EDE8" }} />
-                        <div style={{ flex: 1, textAlign: "center" }}>
-                          <p style={{ fontSize: 20, fontWeight: 700, color: "#4A4540", fontFamily: "'DM Serif Display', serif", lineHeight: 1 }}>{res.aprobados + res.pendientes}</p>
-                          <p style={{ fontSize: 10, color: "#7A7570", marginTop: 3, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>Total</p>
-                        </div>
                       </div>
                     </div>
                   );
