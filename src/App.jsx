@@ -1543,7 +1543,7 @@ const SeccionServicios = ({ servicios, pendientes, aprobados, todasCats, cargand
 };
 
 // ── Panel Admin ───────────────────────────────────────────────────
-const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondominio, onLogout }) => {
+const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondominio, onLogout, adminToken }) => {
   const [condominioActivo, setCondominioActivo] = useState(condominios[0]?.slug || "");
   const [seccion, setSeccion] = useState("condominios");
   const [nuevoCondominio, setNuevoCondominio] = useState(null); // null | "form"
@@ -1570,7 +1570,9 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
       setCargando(true);
       const [svcs, evs] = await Promise.all([
         query("proveedores", { filter: `condominio=eq.${condominioActivo}&order=id.desc` }),
-        query("eventos", { filter: `condominio=eq.${condominioActivo}` }),
+        fetch(`${SUPABASE_URL}/rest/v1/eventos?select=*&condominio=eq.${condominioActivo}`, {
+          headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${adminToken}` }
+        }).then(r => r.json()),
       ]);
       setServicios(Array.isArray(svcs) ? svcs : []);
       setEventos(Array.isArray(evs) ? evs : []);
@@ -2343,7 +2345,7 @@ export default function App() {
     return (
       <>
         <style>{adminCSS}</style>
-        {!adminToken ? <LoginAdmin onLogin={handleSetAdminToken} /> : <PanelAdmin condominios={condominios} todasCats={todasCats} setTodasCats={setTodasCats} onActualizarCondominio={handleActualizarCondominio} onLogout={handleLogout} />}
+        {!adminToken ? <LoginAdmin onLogin={handleSetAdminToken} /> : <PanelAdmin condominios={condominios} todasCats={todasCats} setTodasCats={setTodasCats} onActualizarCondominio={handleActualizarCondominio} onLogout={handleLogout} adminToken={adminToken} />}
       </>
     );
   }
