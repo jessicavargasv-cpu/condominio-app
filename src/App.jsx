@@ -220,10 +220,23 @@ const Badge = ({ categoriaId, todasCats }) => {
   );
 };
 
+// ── Insert público (sin Authorization, rol anon) ──────────────────
+const insertPublico = async (table, data) => {
+  await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    method: "POST",
+    headers: {
+      apikey: SUPABASE_KEY,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal",
+    },
+    body: JSON.stringify(data),
+  });
+};
+
 // ── Registrar evento ─────────────────────────────────────────────
 const registrarEvento = async (proveedorId, condominio, tipo) => {
   try {
-    await query("eventos", { insert: { proveedor_id: proveedorId, condominio, tipo } });
+    await insertPublico("eventos", { proveedor_id: proveedorId, condominio, tipo });
   } catch (e) { /* silencioso */ }
 };
 
