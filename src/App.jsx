@@ -1445,6 +1445,28 @@ const CargaMasiva = ({ condominios, todasCats }) => {
 const SeccionServicios = ({ servicios, pendientes, aprobados, todasCats, cargando, onAprobar, onConfirmar, onEditar }) => {
   const [tabActiva, setTabActiva] = useState("todos");
   const [busqueda, setBusqueda] = useState("");
+  const [promediosVal, setPromediosVal] = useState({}); // { proveedor_id: { promedio, total } }
+
+  useEffect(() => {
+    const cargarPromedios = async () => {
+      if (!servicios.length) return;
+      const ids = servicios.map(s => s.id).join(",");
+      const data = await query("valoraciones", { filter: `proveedor_id=in.(${ids})`, select: "proveedor_id,estrellas" });
+      if (!Array.isArray(data)) return;
+      const acc = {};
+      data.forEach(v => {
+        if (!acc[v.proveedor_id]) acc[v.proveedor_id] = { suma: 0, total: 0 };
+        acc[v.proveedor_id].suma += v.estrellas;
+        acc[v.proveedor_id].total += 1;
+      });
+      const result = {};
+      Object.entries(acc).forEach(([id, { suma, total }]) => {
+        result[id] = { promedio: (suma / total).toFixed(1), total };
+      });
+      setPromediosVal(result);
+    };
+    cargarPromedios();
+  }, [servicios]);
 
   const rechazados = servicios.filter(p => p.estado === "rechazado");
   const porTab = { todos: servicios, pendientes, aprobados, rechazados };
@@ -1465,6 +1487,7 @@ const SeccionServicios = ({ servicios, pendientes, aprobados, todasCats, cargand
 
   const FilaServicioAdmin = ({ p }) => {
     const esPendiente = p.estado === "pendiente";
+    const val = promediosVal[p.id];
     return (
       <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 12, padding: "14px 18px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
         <div style={{ flex: 1 }}>
@@ -1472,6 +1495,13 @@ const SeccionServicios = ({ servicios, pendientes, aprobados, todasCats, cargand
             <span style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</span>
             <Badge categoriaId={p.categoria} todasCats={todasCats} />
             <span style={{ fontSize: 12, color: p.recomienda ? "#2D6A4F" : "#C0392B", fontWeight: 600 }}>{p.recomienda ? "👍" : "👎"}</span>
+            {val ? (
+              <span style={{ fontSize: 11, color: "#B5860D", background: "#FDF3DC", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>
+                ★ {val.promedio}/7 · {val.total} voto{val.total !== 1 ? "s" : ""}
+              </span>
+            ) : (
+              <span style={{ fontSize: 11, color: "#AAA5A0", background: "#F5F2EE", padding: "2px 8px", borderRadius: 999 }}>Sin valorar</span>
+            )}
             {p.estado === "rechazado" && <span style={{ fontSize: 11, background: "#FDECEA", color: "#C0392B", padding: "2px 8px", borderRadius: 999, fontWeight: 600 }}>Rechazado</span>}
           </div>
           <p style={{ fontSize: 12, color: "#7A7570" }}>📞 {p.telefono}</p>
@@ -1560,6 +1590,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const [editandoServicio, setEditandoServicio] = useState(null);
   const [eventos, setEventos] = useState([]);
   const [confirmando, setConfirmando] = useState(null); // { tipo, id, nombre }
+  const [valsDashboard, setValsDashboard] = useState({}); // { proveedor_id: { promedio, total } }
 
   const cond = condominios.find(c => c.slug === condominioActivo);
 
@@ -1576,6 +1607,24 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
       ]);
       setServicios(Array.isArray(svcs) ? svcs : []);
       setEventos(Array.isArray(evs) ? evs : []);
+      // Cargar valoraciones para el dashboard
+      if (Array.isArray(svcs) && svcs.length) {
+        const ids = svcs.map(s => s.id).join(",");
+        const vals = await query("valoraciones", { filter: `proveedor_id=in.(${ids})`, select: "proveedor_id,estrellas" });
+        if (Array.isArray(vals)) {
+          const acc = {};
+          vals.forEach(v => {
+            if (!acc[v.proveedor_id]) acc[v.proveedor_id] = { suma: 0, total: 0 };
+            acc[v.proveedor_id].suma += v.estrellas;
+            acc[v.proveedor_id].total += 1;
+          });
+          const result = {};
+          Object.entries(acc).forEach(([id, { suma, total }]) => {
+            result[id] = { promedio: parseFloat((suma / total).toFixed(1)), total };
+          });
+          setValsDashboard(result);
+        }
+      }
       setCargando(false);
     };
     if (condominioActivo) cargar();
@@ -1745,6 +1794,13 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const masContactado = Object.entries(contactosPorProv).sort((a, b) => b[1] - a[1])[0];
   const masVistoSvc = masVisto ? servicios.find(s => s.id === parseInt(masVisto[0])) : null;
   const masContactadoSvc = masContactado ? servicios.find(s => s.id === parseInt(masContactado[0])) : null;
+
+  // Top 3 mejor valorados
+  const top3Valorados = aprobados
+    .filter(s => valsDashboard[s.id])
+    .map(s => ({ ...s, promedio: valsDashboard[s.id].promedio, totalVotos: valsDashboard[s.id].total }))
+    .sort((a, b) => b.promedio - a.promedio || b.totalVotos - a.totalVotos)
+    .slice(0, 3);
   const hace7dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const sinVistas = aprobados.filter(s => !vistasPorProv[s.id] && s.updated_at && new Date(s.updated_at) < hace7dias);
 
@@ -2106,7 +2162,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
               </div>
 
               {/* Conversión + Rankings */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
                 {/* Conversión de Consultas */}
                 <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
                   <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Conversión de Consultas</p>
@@ -2122,7 +2178,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                 </div>
                 {/* Ranking de Visibilidad */}
                 <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
-                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Ranking de Visibilidad</p>
+                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Más Visitado</p>
                   {masVistoSvc ? (
                     <>
                       <p style={{ fontSize: 13, fontWeight: 600, color: "#1A3F2F", lineHeight: 1.3 }}>{nombreConCat(masVistoSvc)}</p>
@@ -2147,6 +2203,30 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                     <div>
                       <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 6 }}>Sin datos aún</p>
                       <p style={{ fontSize: 11, color: "#7A7570" }}>Aparecerá cuando vecinos llamen o escriban</p>
+                    </div>
+                  )}
+                </div>
+                {/* Top 3 Mejor Valorados */}
+                <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "16px 18px" }}>
+                  <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#7A7570", marginBottom: 8 }}>Mejor Valorados</p>
+                  {top3Valorados.length === 0 ? (
+                    <div>
+                      <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 6 }}>Sin valoraciones aún</p>
+                      <p style={{ fontSize: 11, color: "#7A7570" }}>Aparecerá cuando los vecinos valoren servicios</p>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {top3Valorados.map((s, i) => (
+                        <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: i === 0 ? "#B5860D" : i === 1 ? "#7A7570" : "#A0855B", minWidth: 16 }}>
+                            {i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: "#1A3F2F", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.nombre}</p>
+                            <p style={{ fontSize: 11, color: "#B5860D" }}>★ {s.promedio}/7 · {s.totalVotos} voto{s.totalVotos !== 1 ? "s" : ""}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
