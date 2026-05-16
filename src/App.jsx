@@ -1677,15 +1677,19 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const varTasa = calcVar(tasaContactoPeriodo, tasaAnt);
 
   // Actividad diaria usando el período seleccionado
+  const toLocalDate = (isoStr) => {
+    const d = new Date(isoStr);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  };
   const diasLabel = Array.from({ length: Math.min(diasPeriodo, 7) }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() - (Math.min(diasPeriodo, 7) - 1 - i));
-    return d.toISOString().split("T")[0];
+    return toLocalDate(d.toISOString());
   });
   const actividadDiaria = diasLabel.map(dia => ({
     dia: dia.slice(5),
-    vistas: eventos.filter(e => e.tipo === "vista" && e.created_at?.slice(0, 10) === dia).length,
-    contactos: eventos.filter(e => e.tipo === "contacto" && e.created_at?.slice(0, 10) === dia).length,
+    vistas: eventos.filter(e => e.tipo === "vista" && toLocalDate(e.created_at) === dia).length,
+    contactos: eventos.filter(e => e.tipo === "contacto" && toLocalDate(e.created_at) === dia).length,
   }));
   const maxActividad = Math.max(...actividadDiaria.map(d => d.vistas + d.contactos), 1);
 
