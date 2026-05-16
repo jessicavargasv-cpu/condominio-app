@@ -1655,8 +1655,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const hacePeriodo = new Date(Date.now() - diasPeriodo * 24 * 60 * 60 * 1000).toISOString();
   const haceDosPeriodos = new Date(Date.now() - diasPeriodo * 2 * 24 * 60 * 60 * 1000).toISOString();
 
-  const eventosDelPeriodo = eventos.filter(e => e.created_at >= hacePeriodo);
-  const eventosPeriodoAnterior = eventos.filter(e => e.created_at >= haceDosPeriodos && e.created_at < hacePeriodo);
+  const eventosDelPeriodo = eventos.filter(e => new Date(e.created_at) >= new Date(hacePeriodo));
+  const eventosPeriodoAnterior = eventos.filter(e => new Date(e.created_at) >= new Date(haceDosPeriodos) && new Date(e.created_at) < new Date(hacePeriodo));
 
   const vistasPeriodo = eventosDelPeriodo.filter(e => e.tipo === "vista");
   const contactosPeriodo = eventosDelPeriodo.filter(e => e.tipo === "contacto");
@@ -1682,8 +1682,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   });
   const actividadDiaria = diasLabel.map(dia => ({
     dia: dia.slice(5),
-    vistas: eventos.filter(e => e.tipo === "vista" && e.created_at?.startsWith(dia)).length,
-    contactos: eventos.filter(e => e.tipo === "contacto" && e.created_at?.startsWith(dia)).length,
+    vistas: eventos.filter(e => e.tipo === "vista" && e.created_at?.slice(0, 10) === dia).length,
+    contactos: eventos.filter(e => e.tipo === "contacto" && e.created_at?.slice(0, 10) === dia).length,
   }));
   const maxActividad = Math.max(...actividadDiaria.map(d => d.vistas + d.contactos), 1);
 
@@ -1869,7 +1869,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                   const isActivo = condominioActivo === c.slug;
                   // Vistas del mes para este condominio
                   const inicioMes = new Date(); inicioMes.setDate(1); inicioMes.setHours(0,0,0,0);
-                  const vistasMes = eventos.filter(e => e.tipo === "vista" && e.condominio === c.slug && e.created_at >= inicioMes.toISOString()).length;
+                  const vistasMes = eventos.filter(e => e.tipo === "vista" && e.condominio === c.slug && new Date(e.created_at) >= inicioMes).length;
                   // Categorías activas
                   const numCats = (c.categorias_activas || []).length;
                   return (
