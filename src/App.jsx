@@ -44,6 +44,15 @@ const query = async (table, options = {}) => {
   return res.json();
 };
 
+const authResetPassword = async (email) => {
+  const res = await fetch(`${SUPABASE_URL}/auth/v1/recover`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "apikey": SUPABASE_ANON_KEY },
+    body: JSON.stringify({ email }),
+  });
+  return res.ok;
+};
+
 const authLogin = async (email, password) => {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
@@ -72,6 +81,16 @@ const ICONOS_CAT = {
   asesor_isapre: FileText, otro: MoreHorizontal,
   default: Package,
 };
+
+const IconoChat = ({ size = 28, fill = "var(--accent)" }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+    <rect x="0" y="0" width="100" height="80" rx="20" fill={fill}/>
+    <polygon points="22,80 22,100 42,80" fill={fill}/>
+    <circle cx="25" cy="40" r="9" fill="white"/>
+    <circle cx="50" cy="40" r="9" fill="white"/>
+    <circle cx="75" cy="40" r="9" fill="white"/>
+  </svg>
+);
 
 const IconoCat = ({ id, size = 18, color = "currentColor" }) => {
   const Ic = ICONOS_CAT[id] || ICONOS_CAT.default;
@@ -584,13 +603,7 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
           display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginRight: 12,
         }}>
           {/* Ícono chat SVG */}
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-            <rect width="28" height="28" rx="7" fill="var(--accent)"/>
-            <circle cx="9" cy="14" r="2.2" fill="white"/>
-            <circle cx="14" cy="14" r="2.2" fill="white"/>
-            <circle cx="19" cy="14" r="2.2" fill="white"/>
-            <path d="M6 19 L6 22 L10 19" fill="var(--accent)"/>
-          </svg>
+          <IconoChat size={28} />
           <span style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
             <span style={{ fontSize: 17, fontWeight: 700, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.5px" }}>1</span>
             <span style={{ fontSize: 17, fontWeight: 300, color: "var(--text)", fontFamily: "'DM Sans', sans-serif" }}>dato</span>
@@ -985,13 +998,7 @@ const Logo1dato = ({ onVolver }) => (
     background: "none", border: "none", cursor: "pointer", padding: 0,
     display: "flex", alignItems: "center", gap: 8,
   }}>
-    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-      <rect width="28" height="28" rx="7" fill="var(--accent)"/>
-      <circle cx="9" cy="14" r="2.2" fill="white"/>
-      <circle cx="14" cy="14" r="2.2" fill="white"/>
-      <circle cx="19" cy="14" r="2.2" fill="white"/>
-      <path d="M6 19 L6 22 L10 19" fill="var(--accent)"/>
-    </svg>
+    <IconoChat size={28} />
     <span style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
       <span style={{ fontSize: 17, fontWeight: 700, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.5px" }}>1</span>
       <span style={{ fontSize: 17, fontWeight: 300, color: "var(--text)", fontFamily: "'DM Sans', sans-serif" }}>dato</span>
@@ -1222,6 +1229,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
 
 // ── Login Admin ───────────────────────────────────────────────────
 const LoginAdmin = ({ onLogin }) => {
+  const [vista, setVista] = useState("login"); // login | reset | confirmado
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [verPassword, setVerPassword] = useState(false);
@@ -1237,54 +1245,98 @@ const LoginAdmin = ({ onLogin }) => {
     setCargando(false);
   };
 
+  const handleReset = async () => {
+    if (!email) { setError("Ingresa tu email primero."); return; }
+    setCargando(true); setError("");
+    const ok = await authResetPassword(email);
+    setCargando(false);
+    if (ok) { setVista("confirmado"); }
+    else { setError("No se pudo enviar el correo. Verifica el email."); }
+  };
+
+  const logoSection = (
+    <div style={{ textAlign: "center", marginBottom: 28 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
+        <IconoChat size={32} fill="#2D6A4F" />
+        <span style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
+          <span style={{ fontSize: 22, fontWeight: 700, color: "#2D6A4F", fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.5px" }}>1</span>
+          <span style={{ fontSize: 22, fontWeight: 300, color: "#1C1A16", fontFamily: "'DM Sans', sans-serif" }}>dato</span>
+        </span>
+      </div>
+      <h2 className="serif" style={{ fontSize: 24 }}>Panel Administrador</h2>
+      <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 6 }}>Acceso restringido</p>
+    </div>
+  );
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ width: "100%", maxWidth: 400 }} className="fade-up">
         <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "36px 32px", boxShadow: "var(--shadow)" }}>
-          <div style={{ textAlign: "center", marginBottom: 28 }}>
-            {/* Logo 1dato */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20 }}>
-              <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
-                <rect width="28" height="28" rx="7" fill="#2D6A4F"/>
-                <circle cx="9" cy="14" r="2.2" fill="white"/>
-                <circle cx="14" cy="14" r="2.2" fill="white"/>
-                <circle cx="19" cy="14" r="2.2" fill="white"/>
-                <path d="M6 19 L6 22 L10 19" fill="#2D6A4F"/>
-              </svg>
-              <span style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
-                <span style={{ fontSize: 22, fontWeight: 700, color: "#2D6A4F", fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.5px" }}>1</span>
-                <span style={{ fontSize: 22, fontWeight: 300, color: "#1C1A16", fontFamily: "'DM Sans', sans-serif" }}>dato</span>
-              </span>
-            </div>
-            <h2 className="serif" style={{ fontSize: 24 }}>Panel Administrador</h2>
-            <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 6 }}>Acceso restringido</p>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="admin@ejemplo.com" onKeyDown={e => e.key === "Enter" && handleLogin()} /></div>
-            <div>
-              <label style={labelStyle}>Contraseña</label>
-              <div style={{ position: "relative" }}>
-                <input
-                  style={{ ...inputStyle, paddingRight: 44 }}
-                  type={verPassword ? "text" : "password"}
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setError(""); }}
-                  placeholder="••••••••"
-                  onKeyDown={e => e.key === "Enter" && handleLogin()}
-                />
-                <button
-                  onClick={() => setVerPassword(v => !v)}
-                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex", alignItems: "center", padding: 2 }}
-                >
-                  {verPassword ? <EyeOff size={16} strokeWidth={1.75} /> : <Eye size={16} strokeWidth={1.75} />}
-                </button>
+
+          {/* Vista: login */}
+          {vista === "login" && (<>
+            {logoSection}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="admin@ejemplo.com" onKeyDown={e => e.key === "Enter" && handleLogin()} /></div>
+              <div>
+                <label style={labelStyle}>Contraseña</label>
+                <div style={{ position: "relative" }}>
+                  <input
+                    style={{ ...inputStyle, paddingRight: 44 }}
+                    type={verPassword ? "text" : "password"}
+                    value={password}
+                    onChange={e => { setPassword(e.target.value); setError(""); }}
+                    placeholder="••••••••"
+                    onKeyDown={e => e.key === "Enter" && handleLogin()}
+                  />
+                  <button onClick={() => setVerPassword(v => !v)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", display: "flex", alignItems: "center", padding: 2 }}>
+                    {verPassword ? <EyeOff size={16} strokeWidth={1.75} /> : <Eye size={16} strokeWidth={1.75} />}
+                  </button>
+                </div>
               </div>
+              {error && <p style={{ fontSize: 13, color: "var(--warn)", background: "var(--warn-light)", padding: "8px 12px", borderRadius: 8 }}>⚠ {error}</p>}
+              <button onClick={handleLogin} disabled={cargando} style={{ marginTop: 4, background: cargando ? "var(--border)" : "#2D6A4F", color: cargando ? "var(--text-muted)" : "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600, cursor: cargando ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+                {cargando ? "⟳ Verificando..." : "Ingresar"}
+              </button>
+              <button onClick={() => { setVista("reset"); setError(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 13, textDecoration: "underline", padding: 0, textAlign: "center" }}>
+                Olvidé mi contraseña
+              </button>
             </div>
-            {error && <p style={{ fontSize: 13, color: "var(--warn)", background: "var(--warn-light)", padding: "8px 12px", borderRadius: 8 }}>⚠ {error}</p>}
-            <button onClick={handleLogin} disabled={cargando} style={{ marginTop: 4, background: cargando ? "var(--border)" : "#2D6A4F", color: cargando ? "var(--text-muted)" : "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600, cursor: cargando ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
-              {cargando ? "⟳ Verificando..." : "Ingresar"}
-            </button>
-          </div>
+          </>)}
+
+          {/* Vista: reset */}
+          {vista === "reset" && (<>
+            {logoSection}
+            <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 20, textAlign: "center" }}>
+              Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div><label style={labelStyle}>Email</label><input style={inputStyle} type="email" value={email} onChange={e => { setEmail(e.target.value); setError(""); }} placeholder="admin@ejemplo.com" onKeyDown={e => e.key === "Enter" && handleReset()} /></div>
+              {error && <p style={{ fontSize: 13, color: "var(--warn)", background: "var(--warn-light)", padding: "8px 12px", borderRadius: 8 }}>⚠ {error}</p>}
+              <button onClick={handleReset} disabled={cargando} style={{ background: cargando ? "var(--border)" : "#2D6A4F", color: cargando ? "var(--text-muted)" : "#fff", border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 600, cursor: cargando ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+                {cargando ? "⟳ Enviando..." : "Enviar enlace"}
+              </button>
+              <button onClick={() => { setVista("login"); setError(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 13, textDecoration: "underline", padding: 0, textAlign: "center" }}>
+                ← Volver al login
+              </button>
+            </div>
+          </>)}
+
+          {/* Vista: confirmado */}
+          {vista === "confirmado" && (
+            <div style={{ textAlign: "center" }}>
+              {logoSection}
+              <div style={{ fontSize: 40, marginBottom: 16 }}>📬</div>
+              <h3 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Revisa tu correo</h3>
+              <p style={{ fontSize: 14, color: "var(--text-muted)", marginBottom: 24 }}>
+                Te enviamos un enlace a <strong>{email}</strong> para restablecer tu contraseña.
+              </p>
+              <button onClick={() => { setVista("login"); setError(""); }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", fontSize: 13, textDecoration: "underline", padding: 0 }}>
+                ← Volver al login
+              </button>
+            </div>
+          )}
+
         </div>
       </div>
       <p style={{ marginTop: 24, fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>
@@ -1674,7 +1726,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const masContactado = Object.entries(contactosPorProv).sort((a, b) => b[1] - a[1])[0];
   const masVistoSvc = masVisto ? servicios.find(s => s.id === parseInt(masVisto[0])) : null;
   const masContactadoSvc = masContactado ? servicios.find(s => s.id === parseInt(masContactado[0])) : null;
-  const sinVistas = aprobados.filter(s => !vistasPorProv[s.id]);
+  const hace7dias = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const sinVistas = aprobados.filter(s => !vistasPorProv[s.id] && s.updated_at && new Date(s.updated_at) < hace7dias);
 
   // Servicios por categoría
   const porCategoria = catsActivas.map(cat => ({
@@ -1745,13 +1798,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           {/* Logo con padding generoso */}
           <div style={{ padding: "22px 18px 16px", borderBottom: "1px solid #D4EAE0" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <svg width="26" height="26" viewBox="0 0 28 28" fill="none">
-                <rect width="28" height="28" rx="7" fill="#2D6A4F"/>
-                <circle cx="9" cy="14" r="2.2" fill="white"/>
-                <circle cx="14" cy="14" r="2.2" fill="white"/>
-                <circle cx="19" cy="14" r="2.2" fill="white"/>
-                <path d="M6 19 L6 22 L10 19" fill="#2D6A4F"/>
-              </svg>
+              <IconoChat size={26} fill="#2D6A4F" />
               <span style={{ fontSize: 17, fontWeight: 700, color: "#2D6A4F", fontFamily: "'Inter', sans-serif", letterSpacing: "-0.5px" }}>1</span>
               <span style={{ fontSize: 17, fontWeight: 300, color: "#1C1A16", fontFamily: "'Inter', sans-serif", marginLeft: -6 }}>dato</span>
             </div>
