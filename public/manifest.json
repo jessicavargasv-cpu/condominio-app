@@ -2,7 +2,7 @@
   "name": "1dato — Directorio Vecinal",
   "short_name": "1dato",
   "description": "El directorio de servicios que recomiendan tus propios vecinos.",
-  "start_url": "/",
+  "start_url": "/terrazas-chicureo",
   "display": "standalone",
   "background_color": "#F5F2EE",
   "theme_color": "#2D6A4F",
