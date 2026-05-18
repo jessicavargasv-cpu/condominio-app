@@ -7,11 +7,22 @@ import {
   HeartPulse, Baby, Users,
   FileText, Package, MoreHorizontal,
   Search, ChevronDown, ChevronRight, ArrowRight, Phone, Star, Shield,
-  PlusCircle, X, MessageCircle, Mail, EyeOff
+  PlusCircle, X, MessageCircle, Mail, EyeOff, Menu, SlidersHorizontal
 } from "lucide-react";
 
+// ── Hook: detección mobile ────────────────────────────────────────
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+  return isMobile;
+};
+
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
-const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
+const SUPABASE_URL = " https://gztkowyoztqupeplhvev.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6dGtvd3lvenRxdXBlcGxodmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTA3NTksImV4cCI6MjA4OTQyNjc1OX0.MiUvxkuexamCavTRGoL-xCvmdpe6X0R8CClPKRHQNJI";
 
 const ADMIN_EMAIL = "admin.appx@gmail.com";
@@ -589,18 +600,20 @@ const ModalContacto = ({ condominio, onCerrar }) => {
 // ── Navbar 1dato ──────────────────────────────────────────────────
 const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onProponer }) => {
   const [modalContacto, setModalContacto] = useState(false);
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const isMobile = useIsMobile();
 
   const NavLink = ({ id, label }) => (
-    <button onClick={() => onNavegar(id)} style={{
+    <button onClick={() => { onNavegar(id); setMenuAbierto(false); }} style={{
       background: "none", border: "none",
-      borderBottom: `2px solid ${vistaActiva === id ? "var(--accent)" : "transparent"}`,
-      padding: "4px 2px", fontSize: 13, fontWeight: vistaActiva === id ? 600 : 400,
-      color: vistaActiva === id ? "var(--accent)" : "var(--text-muted)",
-      cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s", whiteSpace: "nowrap",
-    }}
-      onMouseEnter={e => { if (vistaActiva !== id) e.currentTarget.style.color = "var(--text)"; }}
-      onMouseLeave={e => { if (vistaActiva !== id) e.currentTarget.style.color = "var(--text-muted)"; }}
-    >{label}</button>
+      borderBottom: isMobile ? "none" : `2px solid ${vistaActiva === id ? "var(--accent)" : "transparent"}`,
+      padding: isMobile ? "14px 0" : "4px 2px",
+      fontSize: isMobile ? 17 : 13,
+      fontWeight: vistaActiva === id ? 600 : 400,
+      color: vistaActiva === id ? "var(--accent)" : isMobile ? "var(--text)" : "var(--text-muted)",
+      cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
+      whiteSpace: "nowrap", width: isMobile ? "100%" : "auto", textAlign: isMobile ? "center" : "left",
+    }}>{label}</button>
   );
 
   return (
@@ -608,14 +621,14 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
       <nav style={{
         background: "var(--surface)", borderBottom: "1px solid var(--border)",
         position: "sticky", top: 0, zIndex: 100,
-        padding: "0 32px", display: "flex", alignItems: "center", gap: 0, height: 56,
+        padding: isMobile ? "0 16px" : "0 32px",
+        display: "flex", alignItems: "center", gap: 0, height: 56,
       }}>
-        {/* Logo 1dato — ícono chat + texto */}
-        <button onClick={() => onNavegar("inicio")} style={{
+        {/* Logo 1dato */}
+        <button onClick={() => { onNavegar("inicio"); setMenuAbierto(false); }} style={{
           background: "none", border: "none", cursor: "pointer", padding: 0,
           display: "flex", alignItems: "center", gap: 8, flexShrink: 0, marginRight: 12,
         }}>
-          {/* Ícono chat SVG */}
           <IconoChat size={28} />
           <span style={{ display: "flex", alignItems: "baseline", gap: 1 }}>
             <span style={{ fontSize: 17, fontWeight: 700, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.5px" }}>1</span>
@@ -623,39 +636,77 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
           </span>
         </button>
 
-        {/* Separador 1 */}
-        <div style={{ width: 1, height: 28, background: "var(--border)", margin: "0 16px", flexShrink: 0 }} />
-
-        {/* Nombre condominio */}
-        <span style={{ fontSize: 13, fontWeight: 600, color: "#1A3F2F", whiteSpace: "nowrap", marginRight: 20, flexShrink: 0 }}>
-          {condominio.nombre}
-        </span>
-
-        {/* Separador 2 */}
-        <div style={{ width: 1, height: 28, background: "var(--border)", marginRight: 20, flexShrink: 0 }} />
-
-        {/* Links */}
-        <div style={{ display: "flex", alignItems: "center", gap: 22, flex: 1 }}>
-          <NavLink id="servicios" label="Servicios" />
-          <NavLink id="como_funciona" label="¿Cómo funciona?" />
-          <button onClick={onProponer} style={{
-            background: "none", border: "none", padding: "4px 2px", fontSize: 13, fontWeight: 400,
-            color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit",
-            transition: "color 0.15s", whiteSpace: "nowrap",
-          }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--text)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
-          >Sugerir servicio</button>
-          <button onClick={() => setModalContacto(true)} style={{
-            background: "none", border: "none", padding: "4px 2px", fontSize: 13, fontWeight: 400,
-            color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit",
-            transition: "color 0.15s", whiteSpace: "nowrap",
-          }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--text)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
-          >Contáctanos</button>
-        </div>
+        {isMobile ? (
+          <>
+            {/* Nombre condominio mobile */}
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#1A3F2F", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {condominio.nombre}
+            </span>
+            {/* Botón hamburguesa */}
+            <button onClick={() => setMenuAbierto(v => !v)} style={{
+              background: "none", border: "none", cursor: "pointer", padding: 8,
+              color: "var(--text)", display: "flex", alignItems: "center",
+            }}>
+              {menuAbierto ? <X size={22} strokeWidth={2} /> : <Menu size={22} strokeWidth={2} />}
+            </button>
+          </>
+        ) : (
+          <>
+            <div style={{ width: 1, height: 28, background: "var(--border)", margin: "0 16px", flexShrink: 0 }} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#1A3F2F", whiteSpace: "nowrap", marginRight: 20, flexShrink: 0 }}>
+              {condominio.nombre}
+            </span>
+            <div style={{ width: 1, height: 28, background: "var(--border)", marginRight: 20, flexShrink: 0 }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 22, flex: 1 }}>
+              <NavLink id="servicios" label="Servicios" />
+              <NavLink id="como_funciona" label="¿Cómo funciona?" />
+              <button onClick={onProponer} style={{
+                background: "none", border: "none", padding: "4px 2px", fontSize: 13, fontWeight: 400,
+                color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit",
+                transition: "color 0.15s", whiteSpace: "nowrap",
+              }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--text)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+              >Sugerir servicio</button>
+              <button onClick={() => setModalContacto(true)} style={{
+                background: "none", border: "none", padding: "4px 2px", fontSize: 13, fontWeight: 400,
+                color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit",
+                transition: "color 0.15s", whiteSpace: "nowrap",
+              }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--text)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+              >Contáctanos</button>
+            </div>
+          </>
+        )}
       </nav>
+
+      {/* Menú mobile desplegable */}
+      {isMobile && menuAbierto && (
+        <>
+          <div onClick={() => setMenuAbierto(false)} style={{
+            position: "fixed", inset: 0, zIndex: 98, background: "rgba(0,0,0,0.35)",
+          }} />
+          <div style={{
+            position: "fixed", top: 56, left: 0, right: 0, zIndex: 99,
+            background: "var(--surface)", borderBottom: "1px solid var(--border)",
+            display: "flex", flexDirection: "column", alignItems: "center",
+            padding: "8px 24px 24px", gap: 4,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          }}>
+            <NavLink id="servicios" label="Servicios" />
+            <NavLink id="como_funciona" label="¿Cómo funciona?" />
+            <button onClick={() => { onProponer(); setMenuAbierto(false); }} style={{
+              background: "none", border: "none", padding: "14px 0", fontSize: 17, fontWeight: 400,
+              color: "var(--text)", cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "center",
+            }}>Sugerir servicio</button>
+            <button onClick={() => { setModalContacto(true); setMenuAbierto(false); }} style={{
+              background: "none", border: "none", padding: "14px 0", fontSize: 17, fontWeight: 400,
+              color: "var(--text)", cursor: "pointer", fontFamily: "inherit", width: "100%", textAlign: "center",
+            }}>Contáctanos</button>
+          </div>
+        </>
+      )}
 
       {modalContacto && <ModalContacto condominio={condominio} onCerrar={() => setModalContacto(false)} />}
     </>
@@ -663,44 +714,47 @@ const Navbar = ({ condominio, onNavegar, vistaActiva, servicios, todasCats, onPr
 };
 
 // ── Hero ──────────────────────────────────────────────────────────
-const Hero = ({ condominio, onNavegar }) => (
-  <div style={{
-    background: "linear-gradient(135deg, var(--surface) 0%, var(--accent-light) 60%, var(--accent-light) 100%)",
-    flex: 1,
-    display: "flex", alignItems: "center", justifyContent: "center",
-    textAlign: "center", position: "relative", overflow: "hidden",
-    padding: "48px 32px",
-  }}>
-    <div style={{ position: "absolute", top: -80, right: -100, width: 500, height: 400, borderRadius: "50%", background: "var(--accent)", opacity: 0.06, pointerEvents: "none" }} />
-    <div style={{ position: "absolute", bottom: -60, left: -80, width: 400, height: 300, borderRadius: "50%", background: "var(--accent)", opacity: 0.05, pointerEvents: "none" }} />
-    <div style={{ position: "absolute", bottom: 40, right: 100, width: 200, height: 200, borderRadius: "50%", background: "var(--accent)", opacity: 0.04, pointerEvents: "none" }} />
-
-    <div className="fade-up" style={{ position: "relative", zIndex: 1, maxWidth: 600 }}>
-      <div style={{ marginBottom: 16 }}>
-        <p style={{ fontSize: 18, fontWeight: 600, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.01em" }}>
-          {condominio.nombre}{condominio.comuna ? <span style={{ fontWeight: 600, color: "var(--accent)" }}> · {condominio.comuna}</span> : null}
+const Hero = ({ condominio, onNavegar }) => {
+  const isMobile = useIsMobile();
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, var(--surface) 0%, var(--accent-light) 60%, var(--accent-light) 100%)",
+      flex: 1,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      textAlign: "center", position: "relative", overflow: "hidden",
+      padding: isMobile ? "36px 20px" : "48px 32px",
+      minHeight: isMobile ? "auto" : undefined,
+    }}>
+      <div style={{ position: "absolute", top: -80, right: -100, width: 500, height: 400, borderRadius: "50%", background: "var(--accent)", opacity: 0.06, pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: -60, left: -80, width: 400, height: 300, borderRadius: "50%", background: "var(--accent)", opacity: 0.05, pointerEvents: "none" }} />
+      <div className="fade-up" style={{ position: "relative", zIndex: 1, maxWidth: 600 }}>
+        <div style={{ marginBottom: 12 }}>
+          <p style={{ fontSize: isMobile ? 14 : 18, fontWeight: 600, color: "var(--accent)", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.01em" }}>
+            {condominio.nombre}{condominio.comuna ? <span style={{ fontWeight: 600, color: "var(--accent)" }}> · {condominio.comuna}</span> : null}
+          </p>
+        </div>
+        <h1 className="serif" style={{ fontSize: isMobile ? 34 : 54, lineHeight: 1.15, marginBottom: isMobile ? 14 : 20, color: "var(--text)" }}>
+          Cuando un vecino tiene{isMobile ? " " : <br />}el dato, todos ganan
+        </h1>
+        <p style={{ fontSize: isMobile ? 14 : 17, color: "var(--text-muted)", lineHeight: 1.65, maxWidth: 440, margin: isMobile ? "0 auto 24px" : "0 auto 36px" }}>
+          El directorio de servicios que recomiendan tus propios vecinos.
         </p>
+        <button onClick={() => onNavegar("servicios")} style={{
+          background: "var(--accent)", color: "#fff", border: "none",
+          borderRadius: 10, padding: isMobile ? "12px 24px" : "14px 32px",
+          fontSize: isMobile ? 14 : 15, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit", display: "inline-flex",
+          alignItems: "center", gap: 8, transition: "opacity 0.2s",
+        }}
+          onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+          onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+        >
+          Ver servicios <ArrowRight size={16} strokeWidth={2.5} />
+        </button>
       </div>
-      <h1 className="serif" style={{ fontSize: 54, lineHeight: 1.12, marginBottom: 20, color: "var(--text)" }}>
-        Cuando un vecino tiene<br />el dato, todos ganan
-      </h1>
-      <p style={{ fontSize: 17, color: "var(--text-muted)", lineHeight: 1.65, maxWidth: 440, margin: "0 auto 36px" }}>
-        El directorio de servicios que recomiendan tus propios vecinos.
-      </p>
-      <button onClick={() => onNavegar("servicios")} style={{
-        background: "var(--accent)", color: "#fff", border: "none",
-        borderRadius: 10, padding: "14px 32px", fontSize: 15, fontWeight: 700,
-        cursor: "pointer", fontFamily: "inherit", display: "inline-flex",
-        alignItems: "center", gap: 8, transition: "opacity 0.2s",
-      }}
-        onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
-        onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-      >
-        Ver servicios <ArrowRight size={16} strokeWidth={2.5} />
-      </button>
     </div>
-  </div>
-);
+  );
+};
 
 // ── Cómo Funciona ─────────────────────────────────────────────────
 const ComoFunciona = ({ onProponer }) => {
@@ -758,7 +812,9 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
   const [catActiva, setCatActiva] = useState(filtroCatInicial || null);
   const [acordeonesAbiertos, setAcordeonesAbiertos] = useState({});
   const [modalBusqueda, setModalBusqueda] = useState(false);
+  const [drawerAbierto, setDrawerAbierto] = useState(false);
   const acordeonRefs = useRef({});
+  const isMobile = useIsMobile();
 
   // Sincronizar si llegan filtros externos (desde búsqueda)
   useEffect(() => {
@@ -803,52 +859,104 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
     }
   };
 
-  return (
-    <div style={{ display: "flex", flex: 1 }}>
-      {/* Sidebar izquierdo */}
-      <div style={{
-        width: "var(--sidebar-w)", flexShrink: 0,
-        borderRight: "1px solid var(--border)", background: "var(--surface)",
-        position: "sticky", top: 56, height: "calc(100vh - 56px)", overflowY: "auto",
-        padding: "16px 0",
-      }}>
-        <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", padding: "0 16px 10px" }}>Categorías</p>
-        {gruposConCats.map(grupo => {
-          const activo = grupoActivo === grupo.id;
-          const total = contarGrupo(grupo.id);
-          return (
-            <button key={grupo.id} onClick={() => { setGrupoActivo(grupo.id); setCatActiva(null); setAcordeonesAbiertos({}); }}
-              style={{
-                width: "100%", textAlign: "left", background: activo ? "var(--accent-light)" : "none",
-                border: "none", padding: "10px 16px", cursor: "pointer", fontFamily: "inherit",
-                display: "flex", alignItems: "center", gap: 10, transition: "background 0.15s",
-                borderLeft: `3px solid ${activo ? "var(--accent)" : "transparent"}`,
-              }}
-              onMouseEnter={e => { if (!activo) e.currentTarget.style.background = "var(--bg)"; }}
-              onMouseLeave={e => { if (!activo) e.currentTarget.style.background = "none"; }}
-            >
-              <div style={{
-                width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                background: activo ? "var(--accent)" : "var(--bg)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                border: `1px solid ${activo ? "var(--accent)" : "var(--border)"}`,
-              }}>
-                <grupo.Icon size={15} color={activo ? "#fff" : "var(--text-muted)"} strokeWidth={1.75} />
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: activo ? 600 : 400, color: activo ? "var(--accent)" : "var(--text)", lineHeight: 1.2 }}>{grupo.label}</p>
-                {total > 0 && <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 1 }}>{total} servicio{total !== 1 ? "s" : ""}</p>}
-              </div>
-            </button>
-          );
-        })}
-      </div>
+  // Sidebar content reutilizable (desktop y drawer mobile)
+  const SidebarContent = ({ onSelectGrupo }) => (
+    <>
+      <p style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--text-muted)", padding: "0 16px 10px" }}>Categorías</p>
+      {gruposConCats.map(grupo => {
+        const activo = grupoActivo === grupo.id;
+        const total = contarGrupo(grupo.id);
+        return (
+          <button key={grupo.id} onClick={() => { setGrupoActivo(grupo.id); setCatActiva(null); setAcordeonesAbiertos({}); onSelectGrupo?.(); }}
+            style={{
+              width: "100%", textAlign: "left", background: activo ? "var(--accent-light)" : "none",
+              border: "none", padding: "10px 16px", cursor: "pointer", fontFamily: "inherit",
+              display: "flex", alignItems: "center", gap: 10, transition: "background 0.15s",
+              borderLeft: `3px solid ${activo ? "var(--accent)" : "transparent"}`,
+            }}
+          >
+            <div style={{
+              width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+              background: activo ? "var(--accent)" : "var(--bg)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              border: `1px solid ${activo ? "var(--accent)" : "var(--border)"}`,
+            }}>
+              <grupo.Icon size={15} color={activo ? "#fff" : "var(--text-muted)"} strokeWidth={1.75} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 13, fontWeight: activo ? 600 : 400, color: activo ? "var(--accent)" : "var(--text)" }}>{grupo.label}</p>
+            </div>
+            {total > 0 && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: activo ? "var(--accent)" : "var(--text-muted)", background: activo ? "var(--accent-light)" : "var(--bg)", border: `1px solid ${activo ? "var(--accent)" : "var(--border)"}`, borderRadius: 999, padding: "1px 7px" }}>{total}</span>
+            )}
+          </button>
+        );
+      })}
+    </>
+  );
 
-      {/* Contenido principal — acordeón */}
-      <div style={{ flex: 1, padding: "24px 32px 56px", minWidth: 0 }}>
+  return (
+    <div style={{ display: "flex", flex: 1, position: "relative" }}>
+
+      {/* Sidebar desktop */}
+      {!isMobile && (
+        <div style={{
+          width: "var(--sidebar-w)", flexShrink: 0,
+          borderRight: "1px solid var(--border)", background: "var(--surface)",
+          position: "sticky", top: 56, height: "calc(100vh - 56px)", overflowY: "auto",
+          padding: "16px 0",
+        }}>
+          <SidebarContent />
+        </div>
+      )}
+
+      {/* Drawer mobile */}
+      {isMobile && drawerAbierto && (
+        <>
+          <div onClick={() => setDrawerAbierto(false)} style={{
+            position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.4)",
+          }} />
+          <div style={{
+            position: "fixed", top: 56, left: 0, bottom: 0, zIndex: 201,
+            width: 260, background: "var(--surface)",
+            borderRight: "1px solid var(--border)", overflowY: "auto",
+            padding: "16px 0",
+            boxShadow: "4px 0 24px rgba(0,0,0,0.15)",
+          }}>
+            <SidebarContent onSelectGrupo={() => setDrawerAbierto(false)} />
+          </div>
+        </>
+      )}
+
+      {/* Contenido principal */}
+      <div style={{ flex: 1, padding: isMobile ? "16px 12px" : "24px 32px", overflowX: "hidden" }}>
+
+        {/* Barra superior mobile: botón filtrar + búsqueda */}
+        {isMobile && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <button onClick={() => setDrawerAbierto(true)} style={{
+              display: "flex", alignItems: "center", gap: 6,
+              background: "var(--surface)", border: "1px solid var(--border)",
+              borderRadius: 8, padding: "8px 14px", fontSize: 13, fontWeight: 600,
+              color: "var(--accent)", cursor: "pointer", fontFamily: "inherit",
+            }}>
+              <SlidersHorizontal size={14} strokeWidth={2} />
+              {gruposConCats.find(g => g.id === grupoActivo)?.label || "Categorías"}
+            </button>
+            <button onClick={() => setModalBusqueda(true)} style={{
+              display: "flex", alignItems: "center", gap: 6, flex: 1,
+              background: "var(--surface)", border: "1px solid var(--border)",
+              borderRadius: 8, padding: "8px 14px", fontSize: 13,
+              color: "var(--text-muted)", cursor: "pointer", fontFamily: "inherit",
+            }}>
+              <Search size={14} strokeWidth={2} /> Buscar...
+            </button>
+          </div>
+        )}
+        {/* Contenido principal — acordeón */}
         {cargando ? <Cargando mensaje="Cargando servicios..." /> : (
           <>
-            {grupoActualObj && (
+            {grupoActualObj && !isMobile && (
               <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }} className="fade-up">
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
@@ -857,7 +965,6 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
                   </div>
                   <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{contarGrupo(grupoActivo)} servicio{contarGrupo(grupoActivo) !== 1 ? "s" : ""} disponible{contarGrupo(grupoActivo) !== 1 ? "s" : ""}</p>
                 </div>
-                {/* Opción A: lupa alineada al título del grupo */}
                 <button onClick={() => setModalBusqueda(true)} style={{
                   background: "var(--bg)", border: "1.5px solid var(--border)", borderRadius: 10,
                   height: 38, padding: "0 14px", display: "flex", alignItems: "center", gap: 8,
@@ -926,7 +1033,7 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
                           {serviciosCat.length === 0 ? (
                             <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "12px 0" }}>Sin servicios en esta categoría aún.</p>
                           ) : (
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+                            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
                               {serviciosCat.map(p => <ServicioCard key={p.id} p={p} todasCats={todasCats} condominio={condominio} />)}
                             </div>
                           )}
@@ -1028,6 +1135,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
   const [serviciosCount, setServiciosCount] = useState(0);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const cats = todasCats.filter(c => condominio.categorias_activas.includes(c.id));
+  const isMobile = useIsMobile();
 
   const formatTelefono = (val) => {
     const digits = val.replace(/\D/g, "").slice(0, 9);
@@ -1111,11 +1219,11 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
         onProponer={() => {}}
       />
 
-      <div style={{ flex: 1, padding: "32px", display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 24, maxWidth: 1100, margin: "0 auto", width: "100%", flex: 1, alignItems: "stretch" }}>
+      <div style={{ flex: 1, padding: isMobile ? "16px 12px" : "32px", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1.4fr", gap: 24, maxWidth: 1100, margin: "0 auto", width: "100%", flex: 1, alignItems: "stretch" }}>
 
-          {/* Columna izquierda — motivacional */}
-          <div style={{
+          {/* Columna izquierda — motivacional (oculta en mobile) */}
+          {!isMobile && <div style={{
             background: "linear-gradient(135deg, #ffffff 0%, #e8f5ee 60%, #c8e8d8 100%)",
             border: "1px solid #D4EAE0", borderRadius: "var(--radius)", padding: "36px 32px",
             position: "relative", overflow: "hidden",
@@ -1161,10 +1269,10 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
                 <p style={{ fontSize: 11, color: "#4A7C6F", lineHeight: 1.6 }}>Pronto podrás dejar tu opinión sobre los servicios del directorio.</p>
               </div>
             </div>
-          </div>
+          </div>}
 
           {/* Columna derecha — formulario */}
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: "32px", boxShadow: "var(--shadow)" }}>
+          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius)", padding: isMobile ? "20px 16px" : "32px", boxShadow: "var(--shadow)" }}>
             <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "var(--accent)", marginBottom: 4 }}>{condominio.nombre}</p>
             <h2 className="serif" style={{ fontSize: 24, marginBottom: 4 }}>Sugerir un servicio</h2>
             <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 24 }}>La información será revisada antes de publicarse.</p>
@@ -1590,6 +1698,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const [editandoServicio, setEditandoServicio] = useState(null);
   const [eventos, setEventos] = useState([]);
   const [confirmando, setConfirmando] = useState(null); // { tipo, id, nombre }
+  const isMobile = useIsMobile();
   const [valsDashboard, setValsDashboard] = useState({}); // { proveedor_id: { promedio, total } }
 
   const cond = condominios.find(c => c.slug === condominioActivo);
@@ -1783,6 +1892,20 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   };
 
   if (!editando) return <Cargando />;
+
+  // Aviso mobile — panel solo desktop
+  if (isMobile) return (
+    <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, textAlign: "center" }}>
+      <div style={{ fontSize: 48, marginBottom: 20 }}>🖥️</div>
+      <h2 style={{ fontSize: 22, fontWeight: 700, color: "#1A3F2F", marginBottom: 12 }}>Panel solo disponible en escritorio</h2>
+      <p style={{ fontSize: 14, color: "#7A7570", lineHeight: 1.7, maxWidth: 320 }}>
+        El panel de administración está optimizado para pantallas de computador. Por favor accede desde un desktop o laptop.
+      </p>
+      <button onClick={onLogout} style={{ marginTop: 32, background: "none", border: "1px solid #E2DDD4", borderRadius: 8, padding: "10px 20px", fontSize: 13, color: "#7A7570", cursor: "pointer", fontFamily: "inherit" }}>
+        Cerrar sesión
+      </button>
+    </div>
+  );
 
   // Ranking histórico por proveedor
   const vistasTotal = eventos.filter(e => e.tipo === "vista");
@@ -2462,5 +2585,6 @@ export default function App() {
       {vistaApp === "publica" && <VistaPublica condominio={cond} todasCats={todasCats} onProponer={() => setVistaApp("formulario")} />}
       {vistaApp === "formulario" && <FormularioPropuesta condominio={cond} todasCats={todasCats} onVolver={() => setVistaApp("publica")} />}
     </>
+
   );
 }
