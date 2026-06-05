@@ -22,7 +22,7 @@ const useIsMobile = () => {
 };
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
-const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
+const SUPABASE_URL = " https://gztkowyoztqupeplhvev.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6dGtvd3lvenRxdXBlcGxodmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTA3NTksImV4cCI6MjA4OTQyNjc1OX0.MiUvxkuexamCavTRGoL-xCvmdpe6X0R8CClPKRHQNJI";
 
 const ADMIN_EMAIL = "admin.appx@gmail.com";
@@ -1848,6 +1848,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
     setNuevaCat({ label: "", emoji: "🏠", grupo: "hogar" }); setCatError(""); setMostrarEmojis(false);
   };
   const handleEliminarCategoria = async (id) => { await query("categorias_custom", { remove: `id=eq.${id}` }); setTodasCats(prev => prev.filter(c => c.id !== id)); setEditando(prev => ({ ...prev, categorias_activas: prev.categorias_activas.filter(c => c !== id) })); setConfirmando(null); };
+  const handleRenombrarCategoria = async (id, nuevoLabel) => { await query("categorias_custom", { update: { where: `id=eq.${id}`, data: { label: nuevoLabel } } }); setTodasCats(prev => prev.map(c => c.id === id ? { ...c, label: nuevoLabel } : c)); };
 
   // Cargar resumen de servicios por condominio (para vista Condominios)
   useEffect(() => {
@@ -2060,6 +2061,22 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
             </div>
             <div><label style={labelStyle}>Teléfono</label><input style={inputStyle} value={form.telefono} onChange={e => set("telefono", e.target.value)} /></div>
             <div><label style={labelStyle}>Descripción</label><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 70 }} value={form.descripcion || ""} onChange={e => set("descripcion", e.target.value)} /></div>
+            <div><label style={labelStyle}>Instagram <span style={{ fontWeight: 400, color: "#7A7570", fontSize: 11 }}>(opcional)</span></label>
+              <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #E2DDD4", borderRadius: 10, overflow: "hidden" }}>
+                <span style={{ padding: "10px 12px", background: "#F5F2EC", borderRight: "1.5px solid #E2DDD4", display: "flex", alignItems: "center" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A7570" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                </span>
+                <input style={{ ...inputStyle, border: "none", borderRadius: 0, flex: 1 }} value={form.instagram || ""} onChange={e => set("instagram", e.target.value)} placeholder="@usuario" />
+              </div>
+            </div>
+            <div><label style={labelStyle}>Facebook <span style={{ fontWeight: 400, color: "#7A7570", fontSize: 11 }}>(opcional)</span></label>
+              <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #E2DDD4", borderRadius: 10, overflow: "hidden" }}>
+                <span style={{ padding: "10px 12px", background: "#F5F2EC", borderRight: "1.5px solid #E2DDD4", display: "flex", alignItems: "center" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A7570" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                </span>
+                <input style={{ ...inputStyle, border: "none", borderRadius: 0, flex: 1 }} value={form.facebook || ""} onChange={e => set("facebook", e.target.value)} placeholder="nombre de página o usuario" />
+              </div>
+            </div>
             <div><label style={labelStyle}>¿Lo recomiendas?</label>
               <div style={{ display: "flex", gap: 10 }}>
                 {[true, false].map(v => <button key={String(v)} onClick={() => set("recomienda", v)} style={{ flex: 1, padding: 10, border: `2px solid ${form.recomienda === v ? (v ? "#2D6A4F" : "#C0392B") : "#E2DDD4"}`, background: form.recomienda === v ? (v ? "#D8EFE4" : "#FDECEA") : "white", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, color: form.recomienda === v ? (v ? "#2D6A4F" : "#C0392B") : "#7A7570" }}>{v ? "👍 Sí" : "👎 No"}</button>)}
@@ -2067,7 +2084,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setEditandoServicio(null)} style={{ flex: 1, background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#7A7570" }}>Cancelar</button>
-              <button onClick={() => handleEditar(form.id, { nombre: form.nombre, categoria: form.categoria, telefono: form.telefono, descripcion: form.descripcion, recomienda: form.recomienda })} style={{ flex: 2, background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Guardar</button>
+              <button onClick={() => handleEditar(form.id, { nombre: form.nombre, categoria: form.categoria, telefono: form.telefono, descripcion: form.descripcion, recomienda: form.recomienda, instagram: form.instagram || null, facebook: form.facebook || null })} style={{ flex: 2, background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Guardar</button>
             </div>
           </div>
         </div>
@@ -2525,7 +2542,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                     {todasCats.map(cat => { const activa = editando.categorias_activas.includes(cat.id); return (
                       <div key={cat.id} style={{ display: "flex", alignItems: "center" }}>
                         <button onClick={() => setEditando(prev => ({ ...prev, categorias_activas: activa ? prev.categorias_activas.filter(c => c !== cat.id) : [...prev.categorias_activas, cat.id] }))} style={{ background: activa ? "#D8EFE4" : "#F5F2EC", color: activa ? "#2D6A4F" : "#7A7570", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderRadius: cat.custom ? "999px 0 0 999px" : 999, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRight: cat.custom ? "none" : undefined }}>{cat.emoji} {cat.label} {activa ? "✓" : "+"}</button>
-                        {cat.custom && <button onClick={() => setConfirmando({ tipo: "categoria", id: cat.id, nombre: cat.label })} style={{ background: "#FDECEA", color: "#C0392B", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderLeft: "1px solid #E2DDD4", borderRadius: "0 999px 999px 0", padding: "6px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✕</button>}
+                        {cat.custom && <button onClick={() => { const nuevoLabel = window.prompt("Nuevo nombre para la categoría:", cat.label); if (nuevoLabel && nuevoLabel.trim() && nuevoLabel.trim() !== cat.label) handleRenombrarCategoria(cat.id, nuevoLabel.trim()); }} style={{ background: "#F5F2EC", color: "#7A7570", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderLeft: "none", padding: "6px 8px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>✏️</button>}
+                        {cat.custom && <button onClick={() => setConfirmando({ tipo: "categoria", id: cat.id, nombre: cat.label })} style={{ background: "#FDECEA", color: "#C0392B", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderLeft: "none", borderRadius: "0 999px 999px 0", padding: "6px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✕</button>}
                       </div>
                     ); })}
                   </div>
