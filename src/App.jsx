@@ -437,15 +437,41 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
           <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
             <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{p.nombre}</p>
-            <Badge categoriaId={p.categoria} todasCats={todasCats} />
-            {p.recomienda
-              ? <span style={{ fontSize: 10, fontWeight: 600, color: "var(--accent)", background: "var(--accent-light)", padding: "2px 8px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 3, alignSelf: "flex-start" }}>
-                  <Star size={9} strokeWidth={2} /> Recomendado
-                </span>
-              : <span style={{ fontSize: 10, fontWeight: 600, color: "var(--warn)", background: "var(--warn-light)", padding: "2px 8px", borderRadius: 999, alignSelf: "flex-start" }}>
-                  👎 No recomendado
-                </span>
-            }
+            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+              <Badge categoriaId={p.categoria} todasCats={todasCats} />
+              {p.recomienda
+                ? <span style={{ fontSize: 10, fontWeight: 600, color: "var(--accent)", background: "var(--accent-light)", padding: "2px 8px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                    <Star size={9} strokeWidth={2} /> Recomendado
+                  </span>
+                : <span style={{ fontSize: 10, fontWeight: 600, color: "var(--warn)", background: "var(--warn-light)", padding: "2px 8px", borderRadius: 999 }}>
+                    👎 No recomendado
+                  </span>
+              }
+            </div>
+            {(p.instagram || p.facebook) && (
+              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 1 }}>
+                {p.instagram && (
+                  <a href={`https://instagram.com/${p.instagram.replace(/^@/, "")}`} target="_blank" rel="noreferrer"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-muted)", textDecoration: "none" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                    {p.instagram.startsWith("@") ? p.instagram : `@${p.instagram}`}
+                  </a>
+                )}
+                {p.facebook && (
+                  <a href={`https://facebook.com/${p.facebook.replace(/^@/, "")}`} target="_blank" rel="noreferrer"
+                    style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-muted)", textDecoration: "none" }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                    {p.facebook}
+                  </a>
+                )}
+              </div>
+            )}
           </div>
           {/* Rating / Valorar */}
           {!cargandoVal && (
@@ -1163,7 +1189,7 @@ const Logo1dato = ({ onVolver }) => (
 );
 
 const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
-  const [form, setForm] = useState({ nombre: "", grupo: "", categoria: "", telefonoLocal: "", descripcion: "", recomienda: true });
+  const [form, setForm] = useState({ nombre: "", grupo: "", categoria: "", telefonoLocal: "", descripcion: "", recomienda: true, instagram: "", facebook: "" });
   const [telError, setTelError] = useState("");
   const [unicidadError, setUnicidadError] = useState("");
   const [enviado, setEnviado] = useState(false);
@@ -1213,7 +1239,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
       return;
     }
     await query("proveedores", {
-      insert: { condominio: condominio.slug, nombre: form.nombre, categoria: form.categoria, telefono: telefonoCompleto, descripcion: form.descripcion, recomienda: form.recomienda, estado: "pendiente" },
+      insert: { condominio: condominio.slug, nombre: form.nombre, categoria: form.categoria, telefono: telefonoCompleto, descripcion: form.descripcion, recomienda: form.recomienda, instagram: form.instagram || null, facebook: form.facebook || null, estado: "pendiente" },
     });
     setEnviando(false);
     setEnviado(true);
@@ -1349,6 +1375,32 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
                 </div>
                 {telError && <p style={{ fontSize: 11, color: "var(--warn)", marginTop: 5 }}>⚠ {telError}</p>}
                 {!telError && form.telefonoLocal && <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 5 }}>Se guardará como: <strong>{telefonoCompleto}</strong></p>}
+              </div>
+              {/* Instagram */}
+              <div>
+                <label style={labelStyle}>Instagram <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opcional)</span></label>
+                <div style={{ display: "flex", alignItems: "center", border: "1.5px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
+                  <span style={{ padding: "10px 12px", background: "var(--bg)", borderRight: "1.5px solid var(--border)", display: "flex", alignItems: "center" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                  </span>
+                  <input style={{ ...inputStyle, border: "none", borderRadius: 0, flex: 1 }}
+                    value={form.instagram}
+                    onChange={e => set("instagram", e.target.value)}
+                    placeholder="@usuario" />
+                </div>
+              </div>
+              {/* Facebook */}
+              <div>
+                <label style={labelStyle}>Facebook <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opcional)</span></label>
+                <div style={{ display: "flex", alignItems: "center", border: "1.5px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
+                  <span style={{ padding: "10px 12px", background: "var(--bg)", borderRight: "1.5px solid var(--border)", display: "flex", alignItems: "center" }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                  </span>
+                  <input style={{ ...inputStyle, border: "none", borderRadius: 0, flex: 1 }}
+                    value={form.facebook}
+                    onChange={e => set("facebook", e.target.value)}
+                    placeholder="nombre de página o usuario" />
+                </div>
               </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
