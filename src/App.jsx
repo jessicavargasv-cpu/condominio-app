@@ -412,7 +412,7 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
     const catLabel = todasCats.find(c => c.id === p.categoria)?.label || "";
     const texto = `${p.nombre}${catLabel ? ` – ${catLabel}` : ""}\n📞 ${p.telefono}\n${promedio ? `⭐ ${promedio}/7 según vecinos\n` : ""}🏘️ Directorio ${condominio?.nombre || "Condominio"}\n🔗 ${window.location.href}`;
     if (navigator.share) {
-      try { await navigator.share({ title: p.nombre, text: texto }); } catch (_) {}
+      try { await navigator.share({ text: texto }); } catch (_) {}
     } else {
       await navigator.clipboard.writeText(texto);
       alert("Datos copiados al portapapeles");
@@ -490,7 +490,7 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <a href={telHref}
             onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
-            style={{ fontSize: 13, fontWeight: 500, color: "var(--text)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}
+            style={{ fontSize: 13, fontWeight: 500, color: "var(--text)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}
             onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
             onMouseLeave={e => e.currentTarget.style.color = "var(--text)"}
           >
