@@ -435,27 +435,17 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
       >
         {/* Fila superior: nombre + badges izquierda | rating derecha */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <p style={{ fontWeight: 600, fontSize: 14, margin: "0 0 6px" }}>{p.nombre}</p>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
-              <Badge categoriaId={p.categoria} todasCats={todasCats} />
-              {p.recomienda && (
-                <span style={{
-                  fontSize: 10, fontWeight: 600, color: "var(--accent)",
-                  background: "var(--accent-light)", padding: "2px 8px",
-                  borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 3,
-                }}>
+          <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
+            <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{p.nombre}</p>
+            <Badge categoriaId={p.categoria} todasCats={todasCats} />
+            {p.recomienda
+              ? <span style={{ fontSize: 10, fontWeight: 600, color: "var(--accent)", background: "var(--accent-light)", padding: "2px 8px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 3, alignSelf: "flex-start" }}>
                   <Star size={9} strokeWidth={2} /> Recomendado
                 </span>
-              )}
-              {!p.recomienda && (
-                <span style={{
-                  fontSize: 10, fontWeight: 600, color: "var(--warn)",
-                  background: "var(--warn-light)", padding: "2px 8px",
-                  borderRadius: 999,
-                }}>👎 No recomendado</span>
-              )}
-            </div>
+              : <span style={{ fontSize: 10, fontWeight: 600, color: "var(--warn)", background: "var(--warn-light)", padding: "2px 8px", borderRadius: 999, alignSelf: "flex-start" }}>
+                  👎 No recomendado
+                </span>
+            }
           </div>
           {/* Rating / Valorar */}
           {!cargandoVal && (
