@@ -464,6 +464,7 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
               padding: "7px 10px", borderRadius: 8,
               background: "var(--bg)", border: "1px solid var(--border)",
               cursor: "pointer", fontFamily: "inherit",
+              maxWidth: 110,
             }}
               onMouseEnter={e => e.currentTarget.style.background = "var(--accent-light)"}
               onMouseLeave={e => e.currentTarget.style.background = "var(--bg)"}
