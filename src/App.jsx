@@ -7,7 +7,7 @@ import {
   HeartPulse, Baby, Users,
   FileText, Package, MoreHorizontal,
   Search, ChevronDown, ChevronRight, ArrowRight, Phone, Star, Shield,
-  PlusCircle, X, MessageCircle, Mail, EyeOff, Menu, SlidersHorizontal
+  PlusCircle, X, MessageCircle, Mail, EyeOff, Menu, SlidersHorizontal, Share2
 } from "lucide-react";
 
 // ── Hook: detección mobile ────────────────────────────────────────
@@ -22,7 +22,7 @@ const useIsMobile = () => {
 };
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
-const SUPABASE_URL = " https://gztkowyoztqupeplhvev.supabase.co";
+const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6dGtvd3lvenRxdXBlcGxodmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTA3NTksImV4cCI6MjA4OTQyNjc1OX0.MiUvxkuexamCavTRGoL-xCvmdpe6X0R8CClPKRHQNJI";
 
 const ADMIN_EMAIL = "admin.appx@gmail.com";
@@ -394,7 +394,7 @@ const ModalValoracion = ({ p, todasCats, onCerrar, onValorado }) => {
 // ── Tarjeta servicio ──────────────────────────────────────────────
 const ServicioCard = ({ p, todasCats, condominio }) => {
   const [modalVal, setModalVal] = useState(false);
-  const [valoraciones, setValoraciones] = useState(null); // null = cargando, [] = sin datos
+  const [valoraciones, setValoraciones] = useState(null);
 
   const cargarValoraciones = () => {
     query("valoraciones", { filter: `proveedor_id=eq.${p.id}`, select: "estrellas" })
@@ -403,77 +403,122 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
 
   useEffect(() => { cargarValoraciones(); }, [p.id]);
 
-  // null = aún cargando (no mostrar nada), [] = cargado sin valoraciones
   const cargandoVal = valoraciones === null;
   const promedio = !cargandoVal && valoraciones.length > 0
     ? (valoraciones.reduce((s, v) => s + v.estrellas, 0) / valoraciones.length).toFixed(1)
     : null;
 
+  const compartir = async () => {
+    const catLabel = todasCats.find(c => c.id === p.categoria)?.label || "";
+    const texto = `${p.nombre}${catLabel ? ` – ${catLabel}` : ""}\n📞 ${p.telefono}\n${promedio ? `⭐ ${promedio}/7 según vecinos\n` : ""}🏘️ Directorio ${condominio?.nombre || "Condominio"}\n🔗 ${window.location.href}`;
+    if (navigator.share) {
+      try { await navigator.share({ title: p.nombre, text: texto }); } catch (_) {}
+    } else {
+      await navigator.clipboard.writeText(texto);
+      alert("Datos copiados al portapapeles");
+    }
+  };
+
+  const telHref = `tel:${p.telefono.replace(/\s/g, "")}`;
+  const waHref = `https://wa.me/${p.telefono.replace(/\D/g, "").replace(/^0/, "")}`;
+
   return (
     <>
       <div className="fade-up" style={{
         background: "var(--surface)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius)", padding: "18px 20px",
-        boxShadow: "var(--shadow)", display: "flex", flexDirection: "column", gap: 8,
+        borderRadius: "var(--radius)", padding: "16px 18px",
+        boxShadow: "var(--shadow)", display: "flex", flexDirection: "column", gap: 0,
         transition: "transform 0.2s, box-shadow 0.2s",
       }}
         onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}
         onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--shadow)"; }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+        {/* Fila superior: nombre + badges izquierda | rating derecha */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <p style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</p>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-              <a href={`tel:${p.telefono.replace(/\s/g, "")}`}
-                onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
-                style={{ color: "var(--text-muted)", fontSize: 12, display: "flex", alignItems: "center", gap: 4, textDecoration: "none", whiteSpace: "nowrap" }}
-                onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
-                onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
-              >
-                <Phone size={10} strokeWidth={2} style={{ flexShrink: 0 }} /> {p.telefono}
-              </a>
-              <a
-                href={`https://wa.me/${p.telefono.replace(/\D/g, "").replace(/^0/, "")}`}
-                target="_blank" rel="noreferrer"
-                onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
-                title="Escribir por WhatsApp"
-                style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: "#25D366", textDecoration: "none", background: "#E8FBF0", borderRadius: 6, padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0 }}
-                onMouseEnter={e => e.currentTarget.style.background = "#C8F5DC"}
-                onMouseLeave={e => e.currentTarget.style.background = "#E8FBF0"}
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                WA
-              </a>
+            <p style={{ fontWeight: 600, fontSize: 14, margin: "0 0 6px" }}>{p.nombre}</p>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+              <Badge categoriaId={p.categoria} todasCats={todasCats} />
+              {p.recomienda && (
+                <span style={{
+                  fontSize: 10, fontWeight: 600, color: "var(--accent)",
+                  background: "var(--accent-light)", padding: "2px 8px",
+                  borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 3,
+                }}>
+                  <Star size={9} strokeWidth={2} /> Recomendado
+                </span>
+              )}
+              {!p.recomienda && (
+                <span style={{
+                  fontSize: 10, fontWeight: 600, color: "var(--warn)",
+                  background: "var(--warn-light)", padding: "2px 8px",
+                  borderRadius: 999,
+                }}>👎 No recomendado</span>
+              )}
             </div>
           </div>
-          <Badge categoriaId={p.categoria} todasCats={todasCats} />
+          {/* Rating / Valorar */}
+          {!cargandoVal && (
+            <button onClick={() => setModalVal(true)} style={{
+              display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
+              padding: "7px 10px", borderRadius: 8,
+              background: "var(--bg)", border: "1px solid var(--border)",
+              cursor: "pointer", fontFamily: "inherit",
+            }}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--accent-light)"}
+              onMouseLeave={e => e.currentTarget.style.background = "var(--bg)"}
+              title="Valorar proveedor"
+            >
+              <Star size={14} strokeWidth={2} style={{ color: promedio ? "var(--gold)" : "var(--text-muted)", flexShrink: 0 }} />
+              {promedio
+                ? <>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--gold)", lineHeight: 1 }}>{promedio}</span>
+                    <span style={{ fontSize: 10, color: "var(--text-muted)", lineHeight: 1 }}>/7</span>
+                  </>
+                : <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Valorar</span>
+              }
+            </button>
+          )}
         </div>
-        {p.descripcion && <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.6 }}>{p.descripcion}</p>}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 2 }}>
-          <span style={{
-            fontSize: 11, fontWeight: 600,
-            color: p.recomienda ? "var(--accent)" : "var(--warn)",
-            background: p.recomienda ? "var(--accent-light)" : "var(--warn-light)",
-            padding: "2px 8px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4,
-          }}>
-            {p.recomienda ? <><Star size={9} strokeWidth={2} /> Recomendado</> : "👎 No recomendado"}
-          </span>
-          <button onClick={() => setModalVal(true)} style={{
-            background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
-            color: promedio ? "var(--gold)" : "var(--text-muted)", fontSize: 11, fontFamily: "inherit", padding: "2px 6px",
-            borderRadius: 6, transition: "background 0.15s",
-          }}
-            onMouseEnter={e => e.currentTarget.style.background = "var(--bg)"}
-            onMouseLeave={e => e.currentTarget.style.background = "none"}
+
+        {p.descripcion && <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.6, margin: "8px 0 0" }}>{p.descripcion}</p>}
+
+        {/* Divisor */}
+        <div style={{ borderTop: "1px solid var(--border)", margin: "12px 0" }} />
+
+        {/* Fila inferior: teléfono izquierda | WA + compartir derecha */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <a href={telHref}
+            onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
+            style={{ fontSize: 13, fontWeight: 500, color: "var(--text)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+            onMouseLeave={e => e.currentTarget.style.color = "var(--text)"}
           >
-            <span style={{ fontSize: 13, color: promedio ? "var(--gold)" : "var(--text-muted)" }}>★</span>
-            {cargandoVal
-              ? null
-              : promedio
-                ? <span style={{ fontWeight: 600 }}>{promedio}/7 <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({valoraciones.length} vecino{valoraciones.length !== 1 ? "s" : ""})</span></span>
-                : <span>Valorar</span>
-            }
-          </button>
+            <Phone size={13} strokeWidth={2} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
+            {p.telefono}
+          </a>
+          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+            <a href={waHref} target="_blank" rel="noreferrer"
+              onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
+              style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 11px", background: "#25D366", borderRadius: 8, fontSize: 12, fontWeight: 600, color: "#fff", textDecoration: "none" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#1ebe5c"}
+              onMouseLeave={e => e.currentTarget.style.background = "#25D366"}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              WA
+            </a>
+            <button onClick={compartir} title="Compartir proveedor" style={{
+              display: "flex", alignItems: "center", justifyContent: "center",
+              width: 32, height: 32, borderRadius: 8,
+              border: "1px solid var(--border)", background: "var(--surface)",
+              cursor: "pointer", color: "var(--text-muted)",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = "var(--bg)"; e.currentTarget.style.color = "var(--accent)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "var(--surface)"; e.currentTarget.style.color = "var(--text-muted)"; }}
+            >
+              <Share2 size={14} strokeWidth={2} />
+            </button>
+          </div>
         </div>
       </div>
       {modalVal && <ModalValoracion p={p} todasCats={todasCats} onCerrar={() => setModalVal(false)} onValorado={cargarValoraciones} />}
@@ -2585,6 +2630,5 @@ export default function App() {
       {vistaApp === "publica" && <VistaPublica condominio={cond} todasCats={todasCats} onProponer={() => setVistaApp("formulario")} />}
       {vistaApp === "formulario" && <FormularioPropuesta condominio={cond} todasCats={todasCats} onVolver={() => setVistaApp("publica")} />}
     </>
-
   );
 }
