@@ -23,7 +23,7 @@ const useIsMobile = () => {
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
 const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6dGtvd3lvenRxdXBlcGxodmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTA3NTksImV4cCI6MjA4OTQyNjc1OX0.MiUvxkuexamCavTRGoL-xCvmdpe6X0R8CClPKRHQNJI";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6dGtvd3lvenRxdXBlcGxodmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTA3NTksImV4cCI6MjA4OTQyNjc1OX0.MiUvxkuexamCavTRGoL-xCvmdpe6X0R8CClPKRHQNJ";
 
 const ADMIN_EMAIL = "admin.appx@gmail.com";
 
@@ -104,7 +104,9 @@ const IconoChat = ({ size = 28, fill = "var(--accent)" }) => (
 );
 
 const IconoCat = ({ id, size = 18, color = "currentColor" }) => {
-  const Ic = ICONOS_CAT[id] || ICONOS_CAT.default;
+  // Strips condominio prefix: "terrazas-chicureo_caldera" → "caldera"
+  const key = id?.includes("_") ? id.split("_").slice(1).join("_") : id;
+  const Ic = ICONOS_CAT[key] || ICONOS_CAT.default;
   return <Ic size={size} color={color} strokeWidth={1.75} />;
 };
 
@@ -429,67 +431,115 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
     <>
       <div className="fade-up" style={{
         background: "var(--surface)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius)", padding: "18px 20px",
-        boxShadow: "var(--shadow)", display: "flex", flexDirection: "column", gap: 8,
+        borderRadius: "var(--radius)", padding: "16px 18px",
+        boxShadow: "var(--shadow)", display: "flex", flexDirection: "column", gap: 10,
         transition: "transform 0.2s, box-shadow 0.2s",
       }}
         onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}
         onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--shadow)"; }}
       >
+        {/* ── Zona superior: nombre + badges + rating ── */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <p style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</p>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-              <a href={`tel:${p.telefono.replace(/\s/g, "")}`}
-                onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
-                style={{ color: "var(--text-muted)", fontSize: 12, display: "flex", alignItems: "center", gap: 4, textDecoration: "none", whiteSpace: "nowrap" }}
-                onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
-                onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
-              >
-                <Phone size={10} strokeWidth={2} style={{ flexShrink: 0 }} /> {p.telefono}
-              </a>
-              <a
-                href={`https://wa.me/${p.telefono.replace(/\D/g, "").replace(/^0/, "")}`}
-                target="_blank" rel="noreferrer"
-                onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
-                title="Escribir por WhatsApp"
-                style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: "#25D366", textDecoration: "none", background: "#E8FBF0", borderRadius: 6, padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0 }}
-                onMouseEnter={e => e.currentTarget.style.background = "#C8F5DC"}
-                onMouseLeave={e => e.currentTarget.style.background = "#E8FBF0"}
-              >
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                WA
-              </a>
+            <p style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>{p.nombre}</p>
+            <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+              <Badge categoriaId={p.categoria} todasCats={todasCats} />
+              <span style={{
+                fontSize: 11, fontWeight: 600,
+                color: p.recomienda ? "var(--accent)" : "var(--warn)",
+                background: p.recomienda ? "var(--accent-light)" : "var(--warn-light)",
+                padding: "2px 8px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4,
+              }}>
+                {p.recomienda ? <><Star size={9} strokeWidth={2} /> Recomendado</> : "👎 No recomendado"}
+              </span>
             </div>
+            {(p.instagram || p.facebook) && (
+              <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                {p.instagram && (
+                  <a href={`https://instagram.com/${p.instagram.replace(/^@/, "")}`} target="_blank" rel="noreferrer"
+                    style={{ fontSize: 11, color: "var(--text-muted)", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+                    @{p.instagram.replace(/^@/, "")}
+                  </a>
+                )}
+                {p.facebook && (
+                  <a href={`https://facebook.com/${p.facebook.replace(/^@/, "")}`} target="_blank" rel="noreferrer"
+                    style={{ fontSize: 11, color: "var(--text-muted)", textDecoration: "none", display: "flex", alignItems: "center", gap: 3 }}
+                    onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+                    onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+                  >
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    {p.facebook.replace(/^@/, "")}
+                  </a>
+                )}
+              </div>
+            )}
           </div>
-          <Badge categoriaId={p.categoria} todasCats={todasCats} />
-        </div>
-        {p.descripcion && <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.6 }}>{p.descripcion}</p>}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 2 }}>
-          <span style={{
-            fontSize: 11, fontWeight: 600,
-            color: p.recomienda ? "var(--accent)" : "var(--warn)",
-            background: p.recomienda ? "var(--accent-light)" : "var(--warn-light)",
-            padding: "2px 8px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4,
-          }}>
-            {p.recomienda ? <><Star size={9} strokeWidth={2} /> Recomendado</> : "👎 No recomendado"}
-          </span>
+          {/* Rating — arriba derecha */}
           <button onClick={() => setModalVal(true)} style={{
             background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
             color: promedio ? "var(--gold)" : "var(--text-muted)", fontSize: 11, fontFamily: "inherit", padding: "2px 6px",
-            borderRadius: 6, transition: "background 0.15s",
+            borderRadius: 6, transition: "background 0.15s", flexShrink: 0, maxWidth: 110,
           }}
             onMouseEnter={e => e.currentTarget.style.background = "var(--bg)"}
             onMouseLeave={e => e.currentTarget.style.background = "none"}
           >
             <span style={{ fontSize: 13, color: promedio ? "var(--gold)" : "var(--text-muted)" }}>★</span>
-            {cargandoVal
-              ? null
-              : promedio
-                ? <span style={{ fontWeight: 600 }}>{promedio}/7 <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({valoraciones.length} vecino{valoraciones.length !== 1 ? "s" : ""})</span></span>
-                : <span>Valorar</span>
+            {cargandoVal ? null : promedio
+              ? <span style={{ fontWeight: 600 }}>{promedio}/7 <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({valoraciones.length} vecino{valoraciones.length !== 1 ? "s" : ""})</span></span>
+              : <span>Valorar</span>
             }
           </button>
+        </div>
+
+        {p.descripcion && <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.6 }}>{p.descripcion}</p>}
+
+        {/* ── Zona inferior: teléfono + WA + compartir ── */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <a href={`tel:${p.telefono.replace(/\s/g, "")}`}
+            onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
+            style={{ color: "var(--text-muted)", fontSize: 12, display: "flex", alignItems: "center", gap: 4, textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0 }}
+            onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+            onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+          >
+            <Phone size={10} strokeWidth={2} style={{ flexShrink: 0 }} /> {p.telefono}
+          </a>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <a href={`https://wa.me/${p.telefono.replace(/\D/g, "").replace(/^0/, "")}`}
+              target="_blank" rel="noreferrer"
+              onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
+              title="Escribir por WhatsApp"
+              style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: "#25D366", textDecoration: "none", background: "#E8FBF0", borderRadius: 6, padding: "2px 7px", whiteSpace: "nowrap" }}
+              onMouseEnter={e => e.currentTarget.style.background = "#C8F5DC"}
+              onMouseLeave={e => e.currentTarget.style.background = "#E8FBF0"}
+            >
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+              WA
+            </a>
+            <button
+              onClick={() => {
+                const cat = todasCats.find(c => c.id === p.categoria);
+                const texto = `${p.nombre}${cat ? ` · ${cat.label}` : ""} · ${p.telefono}`;
+                if (navigator.share) {
+                  navigator.share({ text: texto }).catch(() => {});
+                } else {
+                  navigator.clipboard.writeText(texto).then(() => alert("Contacto copiado al portapapeles"));
+                }
+              }}
+              title="Compartir"
+              style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", color: "var(--text-muted)", padding: "2px 6px", borderRadius: 6, transition: "background 0.15s" }}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--bg)"}
+              onMouseLeave={e => e.currentTarget.style.background = "none"}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
       {modalVal && <ModalValoracion p={p} todasCats={todasCats} onCerrar={() => setModalVal(false)} onValorado={cargarValoraciones} />}
