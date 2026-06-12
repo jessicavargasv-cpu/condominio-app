@@ -2699,7 +2699,7 @@ export default function App() {
       if (!esAdmin && path) {
         const [gs, cs] = await Promise.all([
           query("grupos", { filter: `condominio_slug=eq.${path}&order=orden.asc` }),
-          query("categorias", { filter: `condominio_slug=eq.${path}&activa=eq.true` }),
+          query("categorias", { filter: `condominio_slug=eq.${path}&activa=is.true` }),
         ]);
         setGruposPublicos(Array.isArray(gs) ? gs : []);
         setCategoriasPublicas(Array.isArray(cs) ? cs : []);
