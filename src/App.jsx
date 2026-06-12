@@ -902,7 +902,7 @@ const VistaServicios = ({ condominio, grupos, categorias, servicios, cargando, f
   const gruposConCats = grupos.map(g => ({
     ...g,
     cats: categorias.filter(c => c.grupo_id === g.id && c.activa),
-  })).filter(g => g.cats.length > 0);
+  })).filter(g => g.cats.length > 0 && serviciosAprobados.some(s => g.cats.some(c => c.id === s.categoria)));
 
   // Contar servicios por grupo
   const contarGrupo = (grupoId) => {
@@ -1193,7 +1193,7 @@ const Logo1dato = ({ onVolver }) => (
   </button>
 );
 
-const FormularioPropuesta = ({ condominio, categorias, onVolver }) => {
+const FormularioPropuesta = ({ condominio, categorias, grupos, onVolver }) => {
   const [form, setForm] = useState({ nombre: "", grupo: "", categoria: "", telefonoLocal: "", descripcion: "", recomienda: true });
   const [telError, setTelError] = useState("");
   const [unicidadError, setUnicidadError] = useState("");
@@ -1250,7 +1250,7 @@ const FormularioPropuesta = ({ condominio, categorias, onVolver }) => {
     setEnviado(true);
   };
 
-  const gruposConCats = GRUPOS.map(g => ({ ...g, cats: cats.filter(c => c.grupo === g.id) })).filter(g => g.cats.length > 0);
+  const gruposConCats = grupos.map(g => ({ ...g, cats: cats.filter(c => c.grupo_id === g.id) })).filter(g => g.cats.length > 0);
   const catsDelGrupo = form.grupo ? (gruposConCats.find(g => g.id === form.grupo)?.cats || []) : [];
 
   if (enviado) return (
@@ -2801,7 +2801,7 @@ export default function App() {
     <>
       <style>{css}</style>
       {vistaApp === "publica" && <VistaPublica condominio={cond} grupos={gruposPublicos} categorias={categoriasPublicas} onProponer={() => setVistaApp("formulario")} />}
-      {vistaApp === "formulario" && <FormularioPropuesta condominio={cond} categorias={categoriasPublicas} onVolver={() => setVistaApp("publica")} />}
+      {vistaApp === "formulario" && <FormularioPropuesta condominio={cond} categorias={categoriasPublicas} grupos={gruposPublicos} onVolver={() => setVistaApp("publica")} />}
     </>
   );
 }
