@@ -7,7 +7,7 @@ import {
   HeartPulse, Baby, Users,
   FileText, Package, MoreHorizontal,
   Search, ChevronDown, ChevronRight, ArrowRight, Phone, Star, Shield,
-  PlusCircle, X, MessageCircle, Mail, EyeOff, Menu, SlidersHorizontal, Share2
+  PlusCircle, X, MessageCircle, Mail, EyeOff, Menu, SlidersHorizontal
 } from "lucide-react";
 
 // ── Hook: detección mobile ────────────────────────────────────────
@@ -22,7 +22,7 @@ const useIsMobile = () => {
 };
 
 // ── CONFIGURACIÓN SUPABASE ────────────────────────────────────────
-const SUPABASE_URL = " https://gztkowyoztqupeplhvev.supabase.co";
+const SUPABASE_URL = "https://gztkowyoztqupeplhvev.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6dGtvd3lvenRxdXBlcGxodmV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4NTA3NTksImV4cCI6MjA4OTQyNjc1OX0.MiUvxkuexamCavTRGoL-xCvmdpe6X0R8CClPKRHQNJI";
 
 const ADMIN_EMAIL = "admin.appx@gmail.com";
@@ -108,7 +108,7 @@ const IconoCat = ({ id, size = 18, color = "currentColor" }) => {
   return <Ic size={size} color={color} strokeWidth={1.75} />;
 };
 
-// ── Grupos ────────────────────────────────────────────────────────
+// ── Grupos (legacy — referencia para migración) ───────────────────
 const GRUPOS = [
   { id: "hogar",      label: "Hogar",             Icon: Wrench },
   { id: "jardin",     label: "Jardín",             Icon: Leaf },
@@ -118,6 +118,22 @@ const GRUPOS = [
   { id: "asesorias",  label: "Asesorías",          Icon: FileText },
   { id: "otros",      label: "Otros",              Icon: Package },
 ];
+
+// ── Mapa icono string → componente Lucide ────────────────────────
+const ICONOS_GRUPO = {
+  "wrench":     Wrench,
+  "leaf":       Leaf,
+  "paw-print":  PawPrint,
+  "car":        Car,
+  "users":      Users,
+  "file-text":  FileText,
+  "package":    Package,
+  "zap":        Zap,
+  "heart-pulse": HeartPulse,
+  "scissors":   Scissors,
+  "waves":      Waves,
+  "gauge":      Gauge,
+};
 
 // ── Categorías base ───────────────────────────────────────────────
 const TODAS_CATEGORIAS = [
@@ -394,7 +410,7 @@ const ModalValoracion = ({ p, todasCats, onCerrar, onValorado }) => {
 // ── Tarjeta servicio ──────────────────────────────────────────────
 const ServicioCard = ({ p, todasCats, condominio }) => {
   const [modalVal, setModalVal] = useState(false);
-  const [valoraciones, setValoraciones] = useState(null);
+  const [valoraciones, setValoraciones] = useState(null); // null = cargando, [] = sin datos
 
   const cargarValoraciones = () => {
     query("valoraciones", { filter: `proveedor_id=eq.${p.id}`, select: "estrellas" })
@@ -403,139 +419,77 @@ const ServicioCard = ({ p, todasCats, condominio }) => {
 
   useEffect(() => { cargarValoraciones(); }, [p.id]);
 
+  // null = aún cargando (no mostrar nada), [] = cargado sin valoraciones
   const cargandoVal = valoraciones === null;
   const promedio = !cargandoVal && valoraciones.length > 0
     ? (valoraciones.reduce((s, v) => s + v.estrellas, 0) / valoraciones.length).toFixed(1)
     : null;
 
-  const compartir = async () => {
-    const catLabel = todasCats.find(c => c.id === p.categoria)?.label || "";
-    const texto = `${p.nombre}${catLabel ? ` – ${catLabel}` : ""}\n📞 ${p.telefono}\n${promedio ? `⭐ ${promedio}/7 según vecinos\n` : ""}🏘️ Directorio ${condominio?.nombre || "Condominio"}\n🔗 ${window.location.href}`;
-    if (navigator.share) {
-      try { await navigator.share({ text: texto }); } catch (_) {}
-    } else {
-      await navigator.clipboard.writeText(texto);
-      alert("Datos copiados al portapapeles");
-    }
-  };
-
-  const telHref = `tel:${p.telefono.replace(/\s/g, "")}`;
-  const waHref = `https://wa.me/${p.telefono.replace(/\D/g, "").replace(/^0/, "")}`;
-
   return (
     <>
       <div className="fade-up" style={{
         background: "var(--surface)", border: "1px solid var(--border)",
-        borderRadius: "var(--radius)", padding: "16px 18px",
-        boxShadow: "var(--shadow)", display: "flex", flexDirection: "column", gap: 0,
+        borderRadius: "var(--radius)", padding: "18px 20px",
+        boxShadow: "var(--shadow)", display: "flex", flexDirection: "column", gap: 8,
         transition: "transform 0.2s, box-shadow 0.2s",
       }}
         onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "var(--shadow-md)"; }}
         onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = "var(--shadow)"; }}
       >
-        {/* Fila superior: nombre + badges izquierda | rating derecha */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
-            <p style={{ fontWeight: 600, fontSize: 14, margin: 0 }}>{p.nombre}</p>
-            <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-              <Badge categoriaId={p.categoria} todasCats={todasCats} />
-              {p.recomienda
-                ? <span style={{ fontSize: 10, fontWeight: 600, color: "var(--accent)", background: "var(--accent-light)", padding: "2px 8px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 3 }}>
-                    <Star size={9} strokeWidth={2} /> Recomendado
-                  </span>
-                : <span style={{ fontSize: 10, fontWeight: 600, color: "var(--warn)", background: "var(--warn-light)", padding: "2px 8px", borderRadius: 999 }}>
-                    👎 No recomendado
-                  </span>
-              }
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <p style={{ fontWeight: 600, fontSize: 14 }}>{p.nombre}</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+              <a href={`tel:${p.telefono.replace(/\s/g, "")}`}
+                onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
+                style={{ color: "var(--text-muted)", fontSize: 12, display: "flex", alignItems: "center", gap: 4, textDecoration: "none", whiteSpace: "nowrap" }}
+                onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
+                onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
+              >
+                <Phone size={10} strokeWidth={2} style={{ flexShrink: 0 }} /> {p.telefono}
+              </a>
+              <a
+                href={`https://wa.me/${p.telefono.replace(/\D/g, "").replace(/^0/, "")}`}
+                target="_blank" rel="noreferrer"
+                onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
+                title="Escribir por WhatsApp"
+                style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 600, color: "#25D366", textDecoration: "none", background: "#E8FBF0", borderRadius: 6, padding: "2px 7px", whiteSpace: "nowrap", flexShrink: 0 }}
+                onMouseEnter={e => e.currentTarget.style.background = "#C8F5DC"}
+                onMouseLeave={e => e.currentTarget.style.background = "#E8FBF0"}
+              >
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="#25D366"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                WA
+              </a>
             </div>
-            {(p.instagram || p.facebook) && (
-              <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 1 }}>
-                {p.instagram && (
-                  <a href={`https://instagram.com/${p.instagram.replace(/^@/, "")}`} target="_blank" rel="noreferrer"
-                    style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-muted)", textDecoration: "none" }}
-                    onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
-                    onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                    {p.instagram.startsWith("@") ? p.instagram : `@${p.instagram}`}
-                  </a>
-                )}
-                {p.facebook && (
-                  <a href={`https://facebook.com/${p.facebook.replace(/^@/, "")}`} target="_blank" rel="noreferrer"
-                    style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-muted)", textDecoration: "none" }}
-                    onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
-                    onMouseLeave={e => e.currentTarget.style.color = "var(--text-muted)"}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                    {p.facebook}
-                  </a>
-                )}
-              </div>
-            )}
           </div>
-          {/* Rating / Valorar */}
-          {!cargandoVal && (
-            <button onClick={() => setModalVal(true)} style={{
-              display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
-              padding: "7px 10px", borderRadius: 8,
-              background: "var(--bg)", border: "1px solid var(--border)",
-              cursor: "pointer", fontFamily: "inherit",
-              maxWidth: 110,
-            }}
-              onMouseEnter={e => e.currentTarget.style.background = "var(--accent-light)"}
-              onMouseLeave={e => e.currentTarget.style.background = "var(--bg)"}
-              title="Valorar proveedor"
-            >
-              <Star size={14} strokeWidth={2} style={{ color: promedio ? "var(--gold)" : "var(--text-muted)", flexShrink: 0 }} />
-              {promedio
-                ? <>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: "var(--gold)", lineHeight: 1 }}>{promedio}</span>
-                    <span style={{ fontSize: 10, color: "var(--text-muted)", lineHeight: 1 }}>/7</span>
-                  </>
-                : <span style={{ fontSize: 11, color: "var(--text-muted)" }}>Valorar</span>
-              }
-            </button>
-          )}
+          <Badge categoriaId={p.categoria} todasCats={todasCats} />
         </div>
-
-        {p.descripcion && <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.6, margin: "8px 0 0" }}>{p.descripcion}</p>}
-
-        {/* Divisor */}
-        <div style={{ borderTop: "1px solid var(--border)", margin: "12px 0" }} />
-
-        {/* Fila inferior: teléfono izquierda | WA + compartir derecha */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <a href={telHref}
-            onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
-            style={{ fontSize: 13, fontWeight: 500, color: "var(--text)", textDecoration: "none", display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap", flexShrink: 0 }}
-            onMouseEnter={e => e.currentTarget.style.color = "var(--accent)"}
-            onMouseLeave={e => e.currentTarget.style.color = "var(--text)"}
+        {p.descripcion && <p style={{ fontSize: 12, color: "#4A4540", lineHeight: 1.6 }}>{p.descripcion}</p>}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, marginTop: 2 }}>
+          <span style={{
+            fontSize: 11, fontWeight: 600,
+            color: p.recomienda ? "var(--accent)" : "var(--warn)",
+            background: p.recomienda ? "var(--accent-light)" : "var(--warn-light)",
+            padding: "2px 8px", borderRadius: 999, display: "inline-flex", alignItems: "center", gap: 4,
+          }}>
+            {p.recomienda ? <><Star size={9} strokeWidth={2} /> Recomendado</> : "👎 No recomendado"}
+          </span>
+          <button onClick={() => setModalVal(true)} style={{
+            background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+            color: promedio ? "var(--gold)" : "var(--text-muted)", fontSize: 11, fontFamily: "inherit", padding: "2px 6px",
+            borderRadius: 6, transition: "background 0.15s",
+          }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--bg)"}
+            onMouseLeave={e => e.currentTarget.style.background = "none"}
           >
-            <Phone size={13} strokeWidth={2} style={{ color: "var(--text-muted)", flexShrink: 0 }} />
-            {p.telefono}
-          </a>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <a href={waHref} target="_blank" rel="noreferrer"
-              onClick={() => registrarEvento(p.id, p.condominio, "contacto")}
-              style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 11px", background: "#25D366", borderRadius: 8, fontSize: 12, fontWeight: 600, color: "#fff", textDecoration: "none" }}
-              onMouseEnter={e => e.currentTarget.style.background = "#1ebe5c"}
-              onMouseLeave={e => e.currentTarget.style.background = "#25D366"}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="#fff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-              WA
-            </a>
-            <button onClick={compartir} title="Compartir proveedor" style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 32, height: 32, borderRadius: 8,
-              border: "1px solid var(--border)", background: "var(--surface)",
-              cursor: "pointer", color: "var(--text-muted)",
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = "var(--bg)"; e.currentTarget.style.color = "var(--accent)"; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "var(--surface)"; e.currentTarget.style.color = "var(--text-muted)"; }}
-            >
-              <Share2 size={14} strokeWidth={2} />
-            </button>
-          </div>
+            <span style={{ fontSize: 13, color: promedio ? "var(--gold)" : "var(--text-muted)" }}>★</span>
+            {cargandoVal
+              ? null
+              : promedio
+                ? <span style={{ fontWeight: 600 }}>{promedio}/7 <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>({valoraciones.length} vecino{valoraciones.length !== 1 ? "s" : ""})</span></span>
+                : <span>Valorar</span>
+            }
+          </button>
         </div>
       </div>
       {modalVal && <ModalValoracion p={p} todasCats={todasCats} onCerrar={() => setModalVal(false)} onValorado={cargarValoraciones} />}
@@ -869,8 +823,8 @@ const ComoFunciona = ({ onProponer }) => {
 };
 
 // ── Vista Servicios ───────────────────────────────────────────────
-const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrupoInicial, filtroCatInicial }) => {
-  const [grupoActivo, setGrupoActivo] = useState(filtroGrupoInicial || GRUPOS[0].id);
+const VistaServicios = ({ condominio, grupos, categorias, servicios, cargando, filtroGrupoInicial, filtroCatInicial }) => {
+  const [grupoActivo, setGrupoActivo] = useState(filtroGrupoInicial || grupos[0]?.id || "");
   const [catActiva, setCatActiva] = useState(filtroCatInicial || null);
   const [acordeonesAbiertos, setAcordeonesAbiertos] = useState({});
   const [modalBusqueda, setModalBusqueda] = useState(false);
@@ -883,10 +837,9 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
     if (filtroGrupoInicial) setGrupoActivo(filtroGrupoInicial);
     if (filtroCatInicial) {
       setCatActiva(filtroCatInicial);
-      const cat = todasCats.find(c => c.id === filtroCatInicial);
-      if (cat) setGrupoActivo(cat.grupo);
+      const cat = categorias.find(c => c.id === filtroCatInicial);
+      if (cat) setGrupoActivo(cat.grupo_id);
       setAcordeonesAbiertos(prev => ({ ...prev, [filtroCatInicial]: true }));
-      // S2: scroll automático al acordeón
       setTimeout(() => {
         acordeonRefs.current[filtroCatInicial]?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 120);
@@ -896,14 +849,14 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
   const serviciosAprobados = servicios.filter(s => s.estado === "aprobado");
 
   // Grupos con categorías activas del condominio
-  const gruposConCats = GRUPOS.map(g => ({
+  const gruposConCats = grupos.map(g => ({
     ...g,
-    cats: todasCats.filter(c => c.grupo === g.id && condominio.categorias_activas.includes(c.id)),
+    cats: categorias.filter(c => c.grupo_id === g.id && c.activa),
   })).filter(g => g.cats.length > 0);
 
   // Contar servicios por grupo
   const contarGrupo = (grupoId) => {
-    const cats = todasCats.filter(c => c.grupo === grupoId && condominio.categorias_activas.includes(c.id));
+    const cats = categorias.filter(c => c.grupo_id === grupoId && c.activa);
     return serviciosAprobados.filter(s => cats.some(c => c.id === s.categoria)).length;
   };
 
@@ -928,6 +881,7 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
       {gruposConCats.map(grupo => {
         const activo = grupoActivo === grupo.id;
         const total = contarGrupo(grupo.id);
+        const GrupoIcon = ICONOS_GRUPO[grupo.icono] || Package;
         return (
           <button key={grupo.id} onClick={() => { setGrupoActivo(grupo.id); setCatActiva(null); setAcordeonesAbiertos({}); onSelectGrupo?.(); }}
             style={{
@@ -943,7 +897,7 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
               display: "flex", alignItems: "center", justifyContent: "center",
               border: `1px solid ${activo ? "var(--accent)" : "var(--border)"}`,
             }}>
-              <grupo.Icon size={15} color={activo ? "#fff" : "var(--text-muted)"} strokeWidth={1.75} />
+              <GrupoIcon size={15} color={activo ? "#fff" : "var(--text-muted)"} strokeWidth={1.75} />
             </div>
             <div style={{ flex: 1 }}>
               <p style={{ fontSize: 13, fontWeight: activo ? 600 : 400, color: activo ? "var(--accent)" : "var(--text)" }}>{grupo.label}</p>
@@ -1022,7 +976,7 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
               <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }} className="fade-up">
                 <div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-                    <grupoActualObj.Icon size={20} color="var(--accent)" strokeWidth={1.75} />
+                    {(() => { const GI = ICONOS_GRUPO[grupoActualObj.icono] || Package; return <GI size={20} color="var(--accent)" strokeWidth={1.75} />; })()}
                     <h2 className="serif" style={{ fontSize: 26 }}>{grupoActualObj.label}</h2>
                   </div>
                   <p style={{ fontSize: 13, color: "var(--text-muted)" }}>{contarGrupo(grupoActivo)} servicio{contarGrupo(grupoActivo) !== 1 ? "s" : ""} disponible{contarGrupo(grupoActivo) !== 1 ? "s" : ""}</p>
@@ -1044,11 +998,11 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
             {modalBusqueda && (
               <ModalBusqueda
                 servicios={servicios}
-                todasCats={todasCats}
+                todasCats={categorias}
                 onCerrar={() => setModalBusqueda(false)}
                 onSeleccionar={(catId) => {
-                  const cat = todasCats.find(c => c.id === catId);
-                  if (cat) setGrupoActivo(cat.grupo);
+                  const cat = categorias.find(c => c.id === catId);
+                  if (cat) setGrupoActivo(cat.grupo_id);
                   setCatActiva(catId);
                   setAcordeonesAbiertos(prev => ({ ...prev, [catId]: true }));
                   setTimeout(() => acordeonRefs.current[catId]?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
@@ -1096,7 +1050,7 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
                             <p style={{ fontSize: 13, color: "var(--text-muted)", textAlign: "center", padding: "12px 0" }}>Sin servicios en esta categoría aún.</p>
                           ) : (
                             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-                              {serviciosCat.map(p => <ServicioCard key={p.id} p={p} todasCats={todasCats} condominio={condominio} />)}
+                              {serviciosCat.map(p => <ServicioCard key={p.id} p={p} todasCats={categorias} condominio={condominio} />)}
                             </div>
                           )}
                         </div>
@@ -1114,7 +1068,7 @@ const VistaServicios = ({ condominio, todasCats, servicios, cargando, filtroGrup
 };
 
 // ── Vista Pública Principal ───────────────────────────────────────
-const VistaPublica = ({ condominio, todasCats, onProponer }) => {
+const VistaPublica = ({ condominio, grupos, categorias, onProponer }) => {
   const [vista, setVista] = useState("inicio");
   const [filtroGrupo, setFiltroGrupo] = useState(null);
   const [filtroCat, setFiltroCat] = useState(null);
@@ -1134,8 +1088,8 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
   const navegar = (destino, catId = null) => {
     setVista(destino);
     if (catId) {
-      const cat = todasCats.find(c => c.id === catId);
-      setFiltroGrupo(cat?.grupo || null);
+      const cat = categorias.find(c => c.id === catId);
+      setFiltroGrupo(cat?.grupo_id || null);
       setFiltroCat(catId);
     } else {
       setFiltroGrupo(null);
@@ -1150,7 +1104,7 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
         onNavegar={navegar}
         vistaActiva={vista}
         servicios={servicios}
-        todasCats={todasCats}
+        todasCats={categorias}
         onProponer={onProponer}
       />
 
@@ -1159,7 +1113,8 @@ const VistaPublica = ({ condominio, todasCats, onProponer }) => {
         {vista === "servicios" && (
           <VistaServicios
             condominio={condominio}
-            todasCats={todasCats}
+            grupos={grupos}
+            categorias={categorias}
             servicios={servicios}
             cargando={cargando}
             filtroGrupoInicial={filtroGrupo}
@@ -1188,15 +1143,15 @@ const Logo1dato = ({ onVolver }) => (
   </button>
 );
 
-const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
-  const [form, setForm] = useState({ nombre: "", grupo: "", categoria: "", telefonoLocal: "", descripcion: "", recomienda: true, instagram: "", facebook: "" });
+const FormularioPropuesta = ({ condominio, categorias, onVolver }) => {
+  const [form, setForm] = useState({ nombre: "", grupo: "", categoria: "", telefonoLocal: "", descripcion: "", recomienda: true });
   const [telError, setTelError] = useState("");
   const [unicidadError, setUnicidadError] = useState("");
   const [enviado, setEnviado] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [serviciosCount, setServiciosCount] = useState(0);
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-  const cats = todasCats.filter(c => condominio.categorias_activas.includes(c.id));
+  const cats = categorias.filter(c => c.activa);
   const isMobile = useIsMobile();
 
   const formatTelefono = (val) => {
@@ -1239,7 +1194,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
       return;
     }
     await query("proveedores", {
-      insert: { condominio: condominio.slug, nombre: form.nombre, categoria: form.categoria, telefono: telefonoCompleto, descripcion: form.descripcion, recomienda: form.recomienda, instagram: form.instagram || null, facebook: form.facebook || null, estado: "pendiente" },
+      insert: { condominio: condominio.slug, nombre: form.nombre, categoria: form.categoria, telefono: telefonoCompleto, descripcion: form.descripcion, recomienda: form.recomienda, estado: "pendiente" },
     });
     setEnviando(false);
     setEnviado(true);
@@ -1277,7 +1232,7 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
         onNavegar={(dest) => { if (dest === "inicio" || dest === "servicios" || dest === "como_funciona") onVolver(); }}
         vistaActiva=""
         servicios={[]}
-        todasCats={todasCats}
+        todasCats={cats}
         onProponer={() => {}}
       />
 
@@ -1375,32 +1330,6 @@ const FormularioPropuesta = ({ condominio, todasCats, onVolver }) => {
                 </div>
                 {telError && <p style={{ fontSize: 11, color: "var(--warn)", marginTop: 5 }}>⚠ {telError}</p>}
                 {!telError && form.telefonoLocal && <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 5 }}>Se guardará como: <strong>{telefonoCompleto}</strong></p>}
-              </div>
-              {/* Instagram */}
-              <div>
-                <label style={labelStyle}>Instagram <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opcional)</span></label>
-                <div style={{ display: "flex", alignItems: "center", border: "1.5px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
-                  <span style={{ padding: "10px 12px", background: "var(--bg)", borderRight: "1.5px solid var(--border)", display: "flex", alignItems: "center" }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                  </span>
-                  <input style={{ ...inputStyle, border: "none", borderRadius: 0, flex: 1 }}
-                    value={form.instagram}
-                    onChange={e => set("instagram", e.target.value)}
-                    placeholder="@usuario" />
-                </div>
-              </div>
-              {/* Facebook */}
-              <div>
-                <label style={labelStyle}>Facebook <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(opcional)</span></label>
-                <div style={{ display: "flex", alignItems: "center", border: "1.5px solid var(--border)", borderRadius: 10, overflow: "hidden" }}>
-                  <span style={{ padding: "10px 12px", background: "var(--bg)", borderRight: "1.5px solid var(--border)", display: "flex", alignItems: "center" }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                  </span>
-                  <input style={{ ...inputStyle, border: "none", borderRadius: 0, flex: 1 }}
-                    value={form.facebook}
-                    onChange={e => set("facebook", e.target.value)}
-                    placeholder="nombre de página o usuario" />
-                </div>
               </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -1769,7 +1698,7 @@ const SeccionServicios = ({ servicios, pendientes, aprobados, todasCats, cargand
 };
 
 // ── Panel Admin ───────────────────────────────────────────────────
-const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondominio, onLogout, adminToken }) => {
+const PanelAdmin = ({ condominios, onActualizarCondominio, onLogout, adminToken }) => {
   const [condominioActivo, setCondominioActivo] = useState(condominios[0]?.slug || "");
   const [seccion, setSeccion] = useState("condominios");
   const [nuevoCondominio, setNuevoCondominio] = useState(null); // null | "form"
@@ -1788,10 +1717,31 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const [confirmando, setConfirmando] = useState(null); // { tipo, id, nombre }
   const isMobile = useIsMobile();
   const [valsDashboard, setValsDashboard] = useState({}); // { proveedor_id: { promedio, total } }
+  // Grupos y categorías por condominio
+  const [grupos, setGrupos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [gruposAbiertos, setGruposAbiertos] = useState({});
+  const [nuevoGrupo, setNuevoGrupo] = useState({ label: "", icono: "package" });
+  const [grupoError, setGrupoError] = useState("");
+  const [renombrandoGrupo, setRenombrandoGrupo] = useState(null); // { id, label }
 
   const cond = condominios.find(c => c.slug === condominioActivo);
 
   useEffect(() => { if (cond) setEditando({ ...cond, colores: { ...cond.colores } }); }, [condominioActivo, condominios]);
+
+  useEffect(() => {
+    const cargarGruposYCats = async () => {
+      if (!condominioActivo) return;
+      const [gs, cs] = await Promise.all([
+        query("grupos", { filter: `condominio_slug=eq.${condominioActivo}&order=orden.asc` }),
+        query("categorias", { filter: `condominio_slug=eq.${condominioActivo}` }),
+      ]);
+      setGrupos(Array.isArray(gs) ? gs : []);
+      setCategorias(Array.isArray(cs) ? cs : []);
+      setGruposAbiertos({});
+    };
+    cargarGruposYCats();
+  }, [condominioActivo]);
 
   useEffect(() => {
     const cargar = async () => {
@@ -1830,25 +1780,52 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const handleAprobar = async (id) => { await query("proveedores", { update: { where: `id=eq.${id}`, data: { estado: "aprobado" } } }); setServicios(p => p.map(x => x.id === id ? { ...x, estado: "aprobado" } : x)); };
   const handleRechazar = async (id) => { await query("proveedores", { remove: `id=eq.${id}` }); setServicios(p => p.filter(x => x.id !== id)); setConfirmando(null); };
   const handleEditar = async (id, datos) => { await query("proveedores", { update: { where: `id=eq.${id}`, data: datos } }); setServicios(p => p.map(x => x.id === id ? { ...x, ...datos } : x)); setEditandoServicio(null); };
-  const handleGuardarCondominio = async () => { await query("condominios", { update: { where: `slug=eq.${condominioActivo}`, data: { nombre: editando.nombre, comuna: editando.comuna || "", colores: editando.colores, categorias_activas: editando.categorias_activas } } }); onActualizarCondominio(editando); setGuardado(true); setTimeout(() => setGuardado(false), 2000); };
+  const handleGuardarCondominio = async () => { await query("condominios", { update: { where: `slug=eq.${condominioActivo}`, data: { nombre: editando.nombre, comuna: editando.comuna || "", colores: editando.colores } } }); onActualizarCondominio(editando); setGuardado(true); setTimeout(() => setGuardado(false), 2000); };
+
+  // ── Handlers grupos ───────────────────────────────────────────────
+  const handleAgregarGrupo = async () => {
+    const label = nuevoGrupo.label.trim();
+    if (!label) { setGrupoError("Escribe un nombre."); return; }
+    if (grupos.find(g => g.label.toLowerCase() === label.toLowerCase())) { setGrupoError("Ya existe."); return; }
+    const orden = grupos.length ? Math.max(...grupos.map(g => g.orden)) + 1 : 1;
+    const res = await query("grupos", { insert: { condominio_slug: condominioActivo, label, icono: nuevoGrupo.icono, orden } });
+    if (Array.isArray(res) && res[0]) setGrupos(prev => [...prev, res[0]]);
+    setNuevoGrupo({ label: "", icono: "package" }); setGrupoError("");
+  };
+  const handleRenombrarGrupo = async () => {
+    if (!renombrandoGrupo?.label.trim()) return;
+    await query("grupos", { update: { where: `id=eq.${renombrandoGrupo.id}`, data: { label: renombrandoGrupo.label.trim() } } });
+    setGrupos(prev => prev.map(g => g.id === renombrandoGrupo.id ? { ...g, label: renombrandoGrupo.label.trim() } : g));
+    setRenombrandoGrupo(null);
+  };
+  const handleEliminarGrupo = async (id) => {
+    const tieneCats = categorias.some(c => c.grupo_id === id);
+    if (tieneCats) return;
+    await query("grupos", { remove: `id=eq.${id}` });
+    setGrupos(prev => prev.filter(g => g.id !== id));
+    setConfirmando(null);
+  };
+
+  // ── Handlers categorías ───────────────────────────────────────────
+  const handleToggleCategoria = async (catId, activa) => {
+    await query("categorias", { update: { where: `id=eq.${catId}`, data: { activa: !activa } } });
+    setCategorias(prev => prev.map(c => c.id === catId ? { ...c, activa: !activa } : c));
+  };
   const handleAgregarCategoria = async () => {
     const label = nuevaCat.label.trim();
     if (!label) { setCatError("Escribe un nombre."); return; }
-    const id = label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-    if (todasCats.find(c => c.id === id)) { setCatError("Ya existe."); return; }
-    await query("categorias_custom", { insert: { id, label, emoji: nuevaCat.emoji, grupo: nuevaCat.grupo } });
-    const nueva = { id, label, emoji: nuevaCat.emoji, grupo: nuevaCat.grupo, custom: true };
-    const nuevasCats = [...todasCats, nueva];
-    const nuevasActivas = [...editando.categorias_activas, id];
-    setTodasCats(nuevasCats);
-    const nuevoEditando = { ...editando, categorias_activas: nuevasActivas };
-    setEditando(nuevoEditando);
-    await query("condominios", { update: { where: `slug=eq.${condominioActivo}`, data: { categorias_activas: nuevasActivas } } });
-    onActualizarCondominio(nuevoEditando);
-    setNuevaCat({ label: "", emoji: "🏠", grupo: "hogar" }); setCatError(""); setMostrarEmojis(false);
+    const id = `${condominioActivo}_${label.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "")}`;
+    if (categorias.find(c => c.id === id)) { setCatError("Ya existe."); return; }
+    const grupoId = nuevaCat.grupo || null;
+    const res = await query("categorias", { insert: { id, condominio_slug: condominioActivo, label, emoji: nuevaCat.emoji, grupo_id: grupoId, activa: true, custom: true } });
+    if (Array.isArray(res) && res[0]) setCategorias(prev => [...prev, res[0]]);
+    setNuevaCat({ label: "", emoji: "🏠", grupo: grupos[0]?.id || null }); setCatError(""); setMostrarEmojis(false);
   };
-  const handleEliminarCategoria = async (id) => { await query("categorias_custom", { remove: `id=eq.${id}` }); setTodasCats(prev => prev.filter(c => c.id !== id)); setEditando(prev => ({ ...prev, categorias_activas: prev.categorias_activas.filter(c => c !== id) })); setConfirmando(null); };
-  const handleRenombrarCategoria = async (id, nuevoLabel) => { await query("categorias_custom", { update: { where: `id=eq.${id}`, data: { label: nuevoLabel } } }); setTodasCats(prev => prev.map(c => c.id === id ? { ...c, label: nuevoLabel } : c)); };
+  const handleEliminarCategoria = async (id) => {
+    await query("categorias", { remove: `id=eq.${id}` });
+    setCategorias(prev => prev.filter(c => c.id !== id));
+    setConfirmando(null);
+  };
 
   // Cargar resumen de servicios por condominio (para vista Condominios)
   useEffect(() => {
@@ -1895,7 +1872,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   // ── Derivados de servicios (deben ir antes de SideLink y período) ──
   const pendientes = servicios.filter(p => p.estado === "pendiente");
   const aprobados = servicios.filter(p => p.estado === "aprobado");
-  const catsActivas = todasCats.filter(c => cond?.categorias_activas.includes(c.id));
+  const catsActivas = categorias.filter(c => c.activa);
 
   // ── Dashboard período filter ──────────────────────────────────
   const [periodo, setPeriodo] = useState("7d");
@@ -1943,25 +1920,22 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   // Helper: nombre con categoría
   const nombreConCat = (svc) => {
     if (!svc) return "—";
-    const cat = todasCats.find(c => c.id === svc.categoria);
+    const cat = categorias.find(c => c.id === svc.categoria);
     return cat ? `${svc.nombre} (${cat.label})` : svc.nombre;
   };
 
-  // Exportar reporte XLSX
   const exportarReporte = () => {
     const wb = XLSX.utils.book_new();
-    // Hoja 1: Servicios aprobados
     const svcsData = [
       ["Nombre", "Categoría", "Teléfono", "Descripción", "Recomienda", "Estado"],
-      ...aprobados.map(s => [s.nombre, todasCats.find(c => c.id === s.categoria)?.label || s.categoria, s.telefono, s.descripcion || "", s.recomienda ? "Sí" : "No", s.estado]),
+      ...aprobados.map(s => [s.nombre, categorias.find(c => c.id === s.categoria)?.label || s.categoria, s.telefono, s.descripcion || "", s.recomienda ? "Sí" : "No", s.estado]),
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(svcsData), "Servicios");
-    // Hoja 2: Eventos del período
     const evData = [
       ["Proveedor", "Categoría", "Tipo", "Fecha"],
       ...eventosDelPeriodo.map(e => {
         const svc = servicios.find(s => s.id === e.proveedor_id);
-        return [svc?.nombre || e.proveedor_id, todasCats.find(c => c.id === svc?.categoria)?.label || "", e.tipo, e.created_at?.slice(0, 10)];
+        return [svc?.nombre || e.proveedor_id, categorias.find(c => c.id === svc?.categoria)?.label || "", e.tipo, e.created_at?.slice(0, 10)];
       }),
     ];
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(evData), "Actividad");
@@ -2043,8 +2017,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
   const ModalEditarServicio = () => {
     const [form, setForm] = useState({ ...editandoServicio });
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-    const cats = todasCats.filter(c => cond.categorias_activas.includes(c.id));
-    const gruposConCats = GRUPOS.map(g => ({ ...g, cats: cats.filter(c => c.grupo === g.id) })).filter(g => g.cats.length > 0);
+    const gruposConCats = grupos.map(g => ({ ...g, cats: categorias.filter(c => c.grupo_id === g.id && c.activa) })).filter(g => g.cats.length > 0);
     return (
       <div style={{ position: "fixed", inset: 0, background: "rgba(28,26,22,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 300, padding: 24 }} onClick={e => e.target === e.currentTarget && setEditandoServicio(null)}>
         <div className="fade-up" style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 16, padding: "28px", width: "100%", maxWidth: 480, boxShadow: "0 20px 60px rgba(28,26,22,0.2)" }}>
@@ -2061,22 +2034,6 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
             </div>
             <div><label style={labelStyle}>Teléfono</label><input style={inputStyle} value={form.telefono} onChange={e => set("telefono", e.target.value)} /></div>
             <div><label style={labelStyle}>Descripción</label><textarea style={{ ...inputStyle, resize: "vertical", minHeight: 70 }} value={form.descripcion || ""} onChange={e => set("descripcion", e.target.value)} /></div>
-            <div><label style={labelStyle}>Instagram <span style={{ fontWeight: 400, color: "#7A7570", fontSize: 11 }}>(opcional)</span></label>
-              <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #E2DDD4", borderRadius: 10, overflow: "hidden" }}>
-                <span style={{ padding: "10px 12px", background: "#F5F2EC", borderRight: "1.5px solid #E2DDD4", display: "flex", alignItems: "center" }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A7570" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                </span>
-                <input style={{ ...inputStyle, border: "none", borderRadius: 0, flex: 1 }} value={form.instagram || ""} onChange={e => set("instagram", e.target.value)} placeholder="@usuario" />
-              </div>
-            </div>
-            <div><label style={labelStyle}>Facebook <span style={{ fontWeight: 400, color: "#7A7570", fontSize: 11 }}>(opcional)</span></label>
-              <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #E2DDD4", borderRadius: 10, overflow: "hidden" }}>
-                <span style={{ padding: "10px 12px", background: "#F5F2EC", borderRight: "1.5px solid #E2DDD4", display: "flex", alignItems: "center" }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7A7570" strokeWidth="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-                </span>
-                <input style={{ ...inputStyle, border: "none", borderRadius: 0, flex: 1 }} value={form.facebook || ""} onChange={e => set("facebook", e.target.value)} placeholder="nombre de página o usuario" />
-              </div>
-            </div>
             <div><label style={labelStyle}>¿Lo recomiendas?</label>
               <div style={{ display: "flex", gap: 10 }}>
                 {[true, false].map(v => <button key={String(v)} onClick={() => set("recomienda", v)} style={{ flex: 1, padding: 10, border: `2px solid ${form.recomienda === v ? (v ? "#2D6A4F" : "#C0392B") : "#E2DDD4"}`, background: form.recomienda === v ? (v ? "#D8EFE4" : "#FDECEA") : "white", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", fontWeight: 600, fontSize: 14, color: form.recomienda === v ? (v ? "#2D6A4F" : "#C0392B") : "#7A7570" }}>{v ? "👍 Sí" : "👎 No"}</button>)}
@@ -2084,7 +2041,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setEditandoServicio(null)} style={{ flex: 1, background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#7A7570" }}>Cancelar</button>
-              <button onClick={() => handleEditar(form.id, { nombre: form.nombre, categoria: form.categoria, telefono: form.telefono, descripcion: form.descripcion, recomienda: form.recomienda, instagram: form.instagram || null, facebook: form.facebook || null })} style={{ flex: 2, background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Guardar</button>
+              <button onClick={() => handleEditar(form.id, { nombre: form.nombre, categoria: form.categoria, telefono: form.telefono, descripcion: form.descripcion, recomienda: form.recomienda })} style={{ flex: 2, background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Guardar</button>
             </div>
           </div>
         </div>
@@ -2487,7 +2444,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
               servicios={servicios}
               pendientes={pendientes}
               aprobados={aprobados}
-              todasCats={todasCats}
+              todasCats={categorias}
               cargando={cargando}
               onAprobar={handleAprobar}
               onConfirmar={setConfirmando}
@@ -2499,7 +2456,7 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           {seccion === "carga_masiva" && (
             <div className="fade-up">
               <h1 className="serif" style={{ fontSize: 26, color: "#1A3F2F", marginBottom: 20 }}>Carga Masiva</h1>
-              <CargaMasiva condominios={condominios} todasCats={todasCats} />
+              <CargaMasiva condominios={condominios} todasCats={categorias} />
             </div>
           )}
 
@@ -2536,19 +2493,109 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                   </div>
                 </div>
                 <div style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 14, padding: "20px 24px" }}>
-                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 4 }}>📂 Categorías</h3>
-                  <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 16 }}>Activa/desactiva o crea nuevas.</p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 20 }}>
-                    {todasCats.map(cat => { const activa = editando.categorias_activas.includes(cat.id); return (
-                      <div key={cat.id} style={{ display: "flex", alignItems: "center" }}>
-                        <button onClick={() => setEditando(prev => ({ ...prev, categorias_activas: activa ? prev.categorias_activas.filter(c => c !== cat.id) : [...prev.categorias_activas, cat.id] }))} style={{ background: activa ? "#D8EFE4" : "#F5F2EC", color: activa ? "#2D6A4F" : "#7A7570", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderRadius: cat.custom ? "999px 0 0 999px" : 999, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRight: cat.custom ? "none" : undefined }}>{cat.emoji} {cat.label} {activa ? "✓" : "+"}</button>
-                        {cat.custom && <button onClick={() => { const nuevoLabel = window.prompt("Nuevo nombre para la categoría:", cat.label); if (nuevoLabel && nuevoLabel.trim() && nuevoLabel.trim() !== cat.label) handleRenombrarCategoria(cat.id, nuevoLabel.trim()); }} style={{ background: "#F5F2EC", color: "#7A7570", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderLeft: "none", padding: "6px 8px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>✏️</button>}
-                        {cat.custom && <button onClick={() => setConfirmando({ tipo: "categoria", id: cat.id, nombre: cat.label })} style={{ background: "#FDECEA", color: "#C0392B", border: `2px solid ${activa ? "#2D6A4F" : "#E2DDD4"}`, borderLeft: "none", borderRadius: "0 999px 999px 0", padding: "6px 10px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✕</button>}
-                      </div>
-                    ); })}
+                  <h3 style={{ fontSize: 14, fontWeight: 600, color: "#1A3F2F", marginBottom: 4 }}>📂 Grupos y categorías</h3>
+                  <p style={{ fontSize: 12, color: "#7A7570", marginBottom: 16 }}>Los grupos y categorías son independientes para cada condominio. Haz clic en un grupo para expandirlo.</p>
+
+                  {/* Lista acordeón de grupos */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+                    {grupos.map(grupo => {
+                      const catsDelGrupo = categorias.filter(c => c.grupo_id === grupo.id);
+                      const abierto = gruposAbiertos[grupo.id] || false;
+                      const puedeEliminar = catsDelGrupo.length === 0;
+                      const GrupoIcon = ICONOS_GRUPO[grupo.icono] || Package;
+                      return (
+                        <div key={grupo.id} style={{ border: "1px solid #E2DDD4", borderRadius: 12, overflow: "hidden" }}>
+                          {/* Header del grupo */}
+                          <div
+                            onClick={() => setGruposAbiertos(p => ({ ...p, [grupo.id]: !abierto }))}
+                            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", cursor: "pointer", background: abierto ? "#F5F2EC" : "white", transition: "background 0.15s" }}
+                          >
+                            <div style={{ width: 28, height: 28, borderRadius: 7, background: "#F5F2EC", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <GrupoIcon size={14} color="#7A7570" strokeWidth={1.75} />
+                            </div>
+                            {renombrandoGrupo?.id === grupo.id ? (
+                              <input
+                                autoFocus
+                                value={renombrandoGrupo.label}
+                                onChange={e => setRenombrandoGrupo(p => ({ ...p, label: e.target.value }))}
+                                onKeyDown={e => { if (e.key === "Enter") handleRenombrarGrupo(); if (e.key === "Escape") setRenombrandoGrupo(null); }}
+                                onClick={e => e.stopPropagation()}
+                                style={{ ...inputStyle, flex: 1, background: "white", fontSize: 13, padding: "5px 10px" }}
+                              />
+                            ) : (
+                              <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#1A3F2F" }}>{grupo.label}</span>
+                            )}
+                            <span style={{ fontSize: 10, background: "#F5F2EC", color: "#7A7570", borderRadius: 999, padding: "2px 7px", border: "1px solid #E2DDD4", flexShrink: 0 }}>
+                              {catsDelGrupo.filter(c => c.activa).length} activa{catsDelGrupo.filter(c => c.activa).length !== 1 ? "s" : ""}
+                              {catsDelGrupo.filter(c => !c.activa).length > 0 ? ` · ${catsDelGrupo.filter(c => !c.activa).length} inactiva${catsDelGrupo.filter(c => !c.activa).length !== 1 ? "s" : ""}` : ""}
+                            </span>
+                            {renombrandoGrupo?.id === grupo.id ? (
+                              <>
+                                <button onClick={e => { e.stopPropagation(); handleRenombrarGrupo(); }} style={{ background: "#2D6A4F", color: "white", border: "none", borderRadius: 7, padding: "4px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>✓</button>
+                                <button onClick={e => { e.stopPropagation(); setRenombrandoGrupo(null); }} style={{ background: "#F5F2EC", color: "#7A7570", border: "1px solid #E2DDD4", borderRadius: 7, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+                              </>
+                            ) : (
+                              <>
+                                <button onClick={e => { e.stopPropagation(); setRenombrandoGrupo({ id: grupo.id, label: grupo.label }); }} style={{ background: "none", border: "1px solid #E2DDD4", borderRadius: 7, width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#7A7570", flexShrink: 0 }} title="Renombrar">✏️</button>
+                                <button onClick={e => { e.stopPropagation(); if (puedeEliminar) setConfirmando({ tipo: "grupo", id: grupo.id, nombre: grupo.label }); }} disabled={!puedeEliminar} style={{ background: puedeEliminar ? "#FDECEA" : "none", border: `1px solid ${puedeEliminar ? "#C0392B" : "#E2DDD4"}`, borderRadius: 7, width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", cursor: puedeEliminar ? "pointer" : "not-allowed", opacity: puedeEliminar ? 1 : 0.3, flexShrink: 0 }} title={puedeEliminar ? "Eliminar grupo" : "Tiene categorías"}>🗑</button>
+                              </>
+                            )}
+                            <ChevronDown size={14} color="#7A7570" strokeWidth={2} style={{ transition: "transform 0.2s", transform: abierto ? "rotate(180deg)" : "rotate(0deg)", flexShrink: 0 }} />
+                          </div>
+
+                          {/* Cuerpo expandible */}
+                          {abierto && (
+                            <div style={{ borderTop: "1px solid #E2DDD4", padding: "12px 14px 12px 52px", background: "#FDFBF7" }}>
+                              {catsDelGrupo.length === 0 ? (
+                                <p style={{ fontSize: 12, color: "#7A7570" }}>Sin categorías. Crea una abajo.</p>
+                              ) : (
+                                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                  {catsDelGrupo.map(cat => (
+                                    <div key={cat.id} style={{ display: "flex", alignItems: "center" }}>
+                                      <button
+                                        onClick={() => handleToggleCategoria(cat.id, cat.activa)}
+                                        style={{ background: cat.activa ? "#D8EFE4" : "#F5F2EC", color: cat.activa ? "#2D6A4F" : "#7A7570", border: `2px solid ${cat.activa ? "#2D6A4F" : "#E2DDD4"}`, borderRadius: cat.custom ? "999px 0 0 999px" : 999, padding: "5px 11px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", borderRight: cat.custom ? "none" : undefined }}
+                                      >{cat.emoji} {cat.label} {cat.activa ? "✓" : "+"}</button>
+                                      {cat.custom && (
+                                        <button onClick={() => setConfirmando({ tipo: "categoria", id: cat.id, nombre: cat.label })} style={{ background: "#FDECEA", color: "#C0392B", border: "2px solid #E2DDD4", borderLeft: "1px solid #E2DDD4", borderRadius: "0 999px 999px 0", padding: "5px 9px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <p style={{ fontSize: 11, color: "#7A7570", marginTop: 8 }}>Chip verde = activa · Chip gris = inactiva, clic para activar</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
+
+                  {/* Nuevo grupo */}
+                  <div style={{ borderTop: "1px solid #E2DDD4", paddingTop: 16, marginBottom: 20 }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 12 }}>+ Nuevo grupo</p>
+                    <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
+                      <div style={{ flex: 1, minWidth: 130 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Nombre</label>
+                        <input style={{ ...inputStyle, background: "white" }} placeholder="Ej: Tecnología..." value={nuevoGrupo.label} onChange={e => { setNuevoGrupo(p => ({ ...p, label: e.target.value })); setGrupoError(""); }} onKeyDown={e => e.key === "Enter" && handleAgregarGrupo()} />
+                      </div>
+                      <div style={{ minWidth: 130 }}>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Ícono</label>
+                        <select value={nuevoGrupo.icono} onChange={e => setNuevoGrupo(p => ({ ...p, icono: e.target.value }))} style={{ ...inputStyle, appearance: "none", background: "white" }}>
+                          {Object.keys(ICONOS_GRUPO).map(k => <option key={k} value={k}>{k}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 11, fontWeight: 600, color: "transparent", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>–</label>
+                        <button onClick={handleAgregarGrupo} style={{ background: "#2D6A4F", color: "#fff", border: "none", borderRadius: 10, padding: "10px 18px", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Agregar</button>
+                      </div>
+                    </div>
+                    {grupoError && <p style={{ fontSize: 12, color: "#C0392B", marginTop: 8 }}>⚠ {grupoError}</p>}
+                  </div>
+
+                  {/* Nueva categoría */}
                   <div style={{ borderTop: "1px solid #E2DDD4", paddingTop: 16 }}>
-                    <p style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 16 }}>+ Nueva categoría</p>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 12 }}>+ Nueva categoría</p>
                     <div style={{ display: "flex", gap: 10, alignItems: "flex-end", flexWrap: "wrap" }}>
                       <div>
                         <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Ícono</label>
@@ -2567,8 +2614,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
                       </div>
                       <div style={{ flex: 1, minWidth: 110 }}>
                         <label style={{ fontSize: 11, fontWeight: 600, color: "#7A7570", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 6, display: "block" }}>Grupo</label>
-                        <select value={nuevaCat.grupo} onChange={e => setNuevaCat(p => ({ ...p, grupo: e.target.value }))} style={{ ...inputStyle, appearance: "none", background: "white" }}>
-                          {GRUPOS.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+                        <select value={nuevaCat.grupo || ""} onChange={e => setNuevaCat(p => ({ ...p, grupo: e.target.value }))} style={{ ...inputStyle, appearance: "none", background: "white" }}>
+                          {grupos.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
                         </select>
                       </div>
                       <div>
@@ -2596,18 +2643,24 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
           <div className="fade-up" style={{ background: "white", border: "1px solid #E2DDD4", borderRadius: 16, padding: "28px 32px", width: "100%", maxWidth: 380, boxShadow: "0 20px 60px rgba(28,26,22,0.2)", textAlign: "center" }}>
             <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#FDECEA", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: 22 }}>⚠</div>
             <h3 className="serif" style={{ fontSize: 20, color: "#1A3F2F", marginBottom: 8 }}>
-              {confirmando.tipo === "categoria" ? "¿Eliminar categoría?" : confirmando.tipo === "rechazar" ? "¿Rechazar servicio?" : "¿Eliminar servicio?"}
+              {confirmando.tipo === "categoria" ? "¿Eliminar categoría?" : confirmando.tipo === "grupo" ? "¿Eliminar grupo?" : confirmando.tipo === "rechazar" ? "¿Rechazar servicio?" : "¿Eliminar servicio?"}
             </h3>
             <p style={{ fontSize: 13, color: "#7A7570", lineHeight: 1.6, marginBottom: 24 }}>
               {confirmando.tipo === "categoria"
                 ? <>Vas a eliminar la categoría <strong>"{confirmando.nombre}"</strong>. Esta acción no se puede deshacer.</>
+                : confirmando.tipo === "grupo"
+                ? <>Vas a eliminar el grupo <strong>"{confirmando.nombre}"</strong>. Esta acción no se puede deshacer.</>
                 : <>Vas a {confirmando.tipo === "rechazar" ? "rechazar" : "eliminar"} a <strong>"{confirmando.nombre}"</strong>. Esta acción no se puede deshacer.</>
               }
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               <button onClick={() => setConfirmando(null)} style={{ flex: 1, background: "#F5F2EC", border: "1.5px solid #E2DDD4", borderRadius: 10, padding: "11px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", color: "#7A7570" }}>Cancelar</button>
               <button
-                onClick={() => confirmando.tipo === "categoria" ? handleEliminarCategoria(confirmando.id) : handleRechazar(confirmando.id)}
+                onClick={() => {
+                  if (confirmando.tipo === "categoria") handleEliminarCategoria(confirmando.id);
+                  else if (confirmando.tipo === "grupo") handleEliminarGrupo(confirmando.id);
+                  else handleRechazar(confirmando.id);
+                }}
                 style={{ flex: 1, background: "#C0392B", color: "#fff", border: "none", borderRadius: 10, padding: "11px", fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}
               >
                 {confirmando.tipo === "rechazar" ? "Rechazar" : "Eliminar"}
@@ -2623,7 +2676,8 @@ const PanelAdmin = ({ condominios, todasCats, setTodasCats, onActualizarCondomin
 // ── App Principal ─────────────────────────────────────────────────
 export default function App() {
   const [condominios, setCondominios] = useState([]);
-  const [todasCats, setTodasCats] = useState(TODAS_CATEGORIAS);
+  const [gruposPublicos, setGruposPublicos] = useState([]);
+  const [categoriasPublicas, setCategoriasPublicas] = useState([]);
   const [cargandoApp, setCargandoApp] = useState(true);
   const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem("1dato_admin_token") || null);
   const [vistaApp, setVistaApp] = useState("publica");
@@ -2639,9 +2693,17 @@ export default function App() {
 
   useEffect(() => {
     const init = async () => {
-      const [conds, catsCustom] = await Promise.all([query("condominios"), query("categorias_custom")]);
+      const [conds] = await Promise.all([query("condominios")]);
       setCondominios(Array.isArray(conds) ? conds : []);
-      setTodasCats([...TODAS_CATEGORIAS, ...(Array.isArray(catsCustom) ? catsCustom.map(c => ({ ...c, custom: true })) : [])]);
+      // Si es vista pública, cargar grupos y categorías del slug actual
+      if (!esAdmin && path) {
+        const [gs, cs] = await Promise.all([
+          query("grupos", { filter: `condominio_slug=eq.${path}&order=orden.asc` }),
+          query("categorias", { filter: `condominio_slug=eq.${path}&activa=eq.true` }),
+        ]);
+        setGruposPublicos(Array.isArray(gs) ? gs : []);
+        setCategoriasPublicas(Array.isArray(cs) ? cs : []);
+      }
       setCargandoApp(false);
     };
     init();
@@ -2658,7 +2720,7 @@ export default function App() {
     return (
       <>
         <style>{adminCSS}</style>
-        {!adminToken ? <LoginAdmin onLogin={handleSetAdminToken} /> : <PanelAdmin condominios={condominios} todasCats={todasCats} setTodasCats={setTodasCats} onActualizarCondominio={handleActualizarCondominio} onLogout={handleLogout} adminToken={adminToken} />}
+        {!adminToken ? <LoginAdmin onLogin={handleSetAdminToken} /> : <PanelAdmin condominios={condominios} onActualizarCondominio={handleActualizarCondominio} onLogout={handleLogout} adminToken={adminToken} />}
       </>
     );
   }
@@ -2688,8 +2750,8 @@ export default function App() {
   return (
     <>
       <style>{css}</style>
-      {vistaApp === "publica" && <VistaPublica condominio={cond} todasCats={todasCats} onProponer={() => setVistaApp("formulario")} />}
-      {vistaApp === "formulario" && <FormularioPropuesta condominio={cond} todasCats={todasCats} onVolver={() => setVistaApp("publica")} />}
+      {vistaApp === "publica" && <VistaPublica condominio={cond} grupos={gruposPublicos} categorias={categoriasPublicas} onProponer={() => setVistaApp("formulario")} />}
+      {vistaApp === "formulario" && <FormularioPropuesta condominio={cond} categorias={categoriasPublicas} onVolver={() => setVistaApp("publica")} />}
     </>
   );
 }
